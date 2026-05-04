@@ -1,0 +1,1 @@
+{"version":2,"name":"central-kaizen-digital","builds":[{"src":"*.html","use":"@vercel/static"}]}
