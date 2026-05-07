@@ -1462,6 +1462,7 @@ tbody tr:hover{
         <div class="hd-user-info"><p id="hd-user-name" style="font-size:12px;font-weight:600;color:var(--n);line-height:1">Admin Sistema</p><span style="font-size:10px;color:var(--gr)">Administración</span></div>
         <div class="hd-av" id="hd-user-av">A</div>
         <span class="pl pl-adm" style="font-size:10px">Admin</span>
+        <button onclick="doLogout()" title="Cerrar sesión" style="width:30px;height:30px;border-radius:8px;border:1px solid var(--cb);background:white;cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center;transition:.2s;color:#6B7280" onmouseover="this.style.background='#FEE2E2';this.style.color='#dc2626';this.style.borderColor='#fca5a5'" onmouseout="this.style.background='white';this.style.color='#6B7280';this.style.borderColor='var(--cb)'">⏏</button>
       </div>
     </div>
   </div>
@@ -2937,6 +2938,81 @@ async function toggleUserActive(id) {
   }
 }
 
+function confirmDeleteUser(id) {
+  const u = USERS.find(function(x){return x.id===id})
+  if (!u) return
+
+  // Primera confirmación
+  const modal1 = document.createElement('div')
+  modal1.style.cssText = 'position:fixed;inset:0;z-index:600;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(27,42,74,.65);backdrop-filter:blur(6px)'
+  modal1.innerHTML = `
+    <div style="background:white;border-radius:18px;overflow:hidden;width:min(380px,92vw);box-shadow:0 24px 80px rgba(27,42,74,.35);animation:pop .2s cubic-bezier(.16,1,.3,1)">
+      <div style="background:linear-gradient(135deg,#7f1d1d,#dc2626);padding:16px 20px;display:flex;align-items:center;gap:10px">
+        <div style="width:36px;height:36px;border-radius:10px;background:rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">🗑️</div>
+        <div><p style="font-size:11px;font-family:'JetBrains Mono',monospace;color:rgba(255,255,255,.5);margin-bottom:1px">ELIMINAR USUARIO</p>
+        <p style="font-size:15px;font-weight:800;color:white">${u.name}</p></div>
+      </div>
+      <div style="padding:20px">
+        <p style="font-size:13px;color:#374151;margin-bottom:6px">¿Estás seguro que deseas eliminar a <strong>${u.name}</strong>?</p>
+        <p style="font-size:12px;color:#9CA3AF;margin-bottom:18px">Empleado #${u.emp} · ${u.area}</p>
+        <div style="display:flex;gap:8px">
+          <button onclick="this.closest('div[style*=fixed]').remove()" style="flex:1;height:38px;border-radius:10px;border:1.5px solid #E5E7EB;background:white;cursor:pointer;font-size:13px;font-weight:600;color:#6B7280">Cancelar</button>
+          <button id="del-confirm1-btn" style="flex:1;height:38px;border-radius:10px;border:none;background:#dc2626;color:white;cursor:pointer;font-size:13px;font-weight:700">Sí, eliminar</button>
+        </div>
+      </div>
+    </div>`
+  document.body.appendChild(modal1)
+
+  document.getElementById('del-confirm1-btn').onclick = function() {
+    modal1.remove()
+
+    // Segunda confirmación
+    const modal2 = document.createElement('div')
+    modal2.style.cssText = 'position:fixed;inset:0;z-index:600;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(127,29,29,.7);backdrop-filter:blur(6px)'
+    modal2.innerHTML = `
+      <div style="background:white;border-radius:18px;overflow:hidden;width:min(380px,92vw);box-shadow:0 24px 80px rgba(127,29,29,.4);animation:pop .2s cubic-bezier(.16,1,.3,1)">
+        <div style="background:#7f1d1d;padding:16px 20px">
+          <p style="font-size:13px;font-weight:900;color:white;margin-bottom:4px">⚠️ Confirmación final</p>
+          <p style="font-size:11px;color:rgba(255,255,255,.6)">Esta acción NO se puede deshacer</p>
+        </div>
+        <div style="padding:20px">
+          <p style="font-size:13px;color:#374151;margin-bottom:16px">¿Confirmas que deseas eliminar permanentemente a <strong style="color:#dc2626">${u.name}</strong> con todos sus datos?</p>
+          <div style="background:#FEF2F2;border:1.5px solid #FECACA;border-radius:10px;padding:10px 12px;margin-bottom:16px">
+            <p style="font-size:11px;color:#dc2626;font-weight:600">Se eliminarán: datos del empleado y su gafete QR.</p>
+            <p style="font-size:11px;color:#9CA3AF;margin-top:2px">Sus kaizens registrados se conservan.</p>
+          </div>
+          <div style="display:flex;gap:8px">
+            <button onclick="this.closest('div[style*=fixed]').remove()" style="flex:1;height:38px;border-radius:10px;border:1.5px solid #E5E7EB;background:white;cursor:pointer;font-size:13px;font-weight:600;color:#6B7280">Cancelar</button>
+            <button id="del-confirm2-btn" style="flex:1;height:38px;border-radius:10px;border:none;background:#7f1d1d;color:white;cursor:pointer;font-size:13px;font-weight:700">🗑️ Eliminar definitivamente</button>
+          </div>
+        </div>
+      </div>`
+    document.body.appendChild(modal2)
+
+    document.getElementById('del-confirm2-btn').onclick = async function() {
+      modal2.remove()
+      await executeDeleteUser(id)
+    }
+  }
+}
+
+async function executeDeleteUser(id) {
+  const u = USERS.find(function(x){return x.id===id})
+  if (!u) return
+  try {
+    if (db) {
+      const { error } = await db.from('employees').delete().eq('id', id)
+      if (error) throw error
+    }
+    USERS = USERS.filter(function(x){return x.id!==id})
+    toast('info', '🗑️ Usuario eliminado: '+u.name)
+    renderUsuarios()
+  } catch(e) {
+    console.error(e)
+    toast('error', '⚠️ Error al eliminar usuario')
+  }
+}
+
 function openNewUserModal() {
   const modal = document.createElement('div')
   modal.style.cssText = 'position:fixed;inset:0;z-index:500;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(27,42,74,.6);backdrop-filter:blur(6px)'
@@ -3016,7 +3092,7 @@ function renderUsuarios(){
         <td><div style="display:flex;gap:4px">
           <button onclick="showQR('${u.emp}','${u.name}')" style="width:28px;height:28px;border-radius:7px;border:none;background:rgba(255,107,53,.1);color:var(--o);cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center" title="Ver QR">▣</button>
           <button onclick="toggleUserActive('${u.id}')" style="width:28px;height:28px;border-radius:7px;border:none;background:${u.active?'rgba(239,68,68,.1)':'rgba(82,183,136,.12)'};color:${u.active?'#dc2626':'#15803d'};cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center" title="${u.active?'Desactivar usuario':'Activar usuario'}">${u.active?'🔒':'✅'}</button>
-          <button class="btn btn-s" style="height:28px;padding:0 8px;font-size:11px">✏️</button>
+          <button onclick="confirmDeleteUser('${u.id}')" style="width:28px;height:28px;border-radius:7px;border:none;background:rgba(239,68,68,.08);color:#dc2626;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center" title="Eliminar usuario">🗑️</button>
         </div></td>
       </tr>`).join('')}</tbody>
     </table></div>
