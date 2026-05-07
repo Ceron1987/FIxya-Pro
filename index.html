@@ -1429,6 +1429,7 @@ tbody tr:hover{
     <button class="ni" id="n-kaizens" onclick="nav('kaizens')"><span class="ni-ico">⚡</span><span>Kaizens</span></button>
     <button class="ni" id="n-nuevo_kaizen" onclick="nav('nuevo_kaizen')"><span class="ni-ico">➕</span><span>Nuevo Kaizen</span></button>
     <button class="ni" id="n-sugerencias" onclick="nav('sugerencias')"><span class="ni-ico">💡</span><span>Sugerencias</span><span class="ni-badge">3</span></button>
+    <button class="ni" id="n-nueva_sugerencia" onclick="nav('nueva_sugerencia')"><span class="ni-ico">✍️</span><span>Nueva Sugerencia</span></button>
     <div class="nav-sec">ANÁLISIS</div>
     <button class="ni" id="n-muda" onclick="nav('muda')"><span class="ni-ico">♻️</span><span>8 Desperdicios</span></button>
     <button class="ni" id="n-reportes" onclick="nav('reportes')"><span class="ni-ico">📊</span><span>Reportes</span></button>
@@ -1558,7 +1559,7 @@ let charts = {}
 let kFilters = {search:'',area:'',muda:'',impact:'',month:'',type:''}
 
 /* ═══ NAVIGATION ═══ */
-const TITLES = {login:'Bienvenido',dashboard:'Dashboard',kaizens:'Kaizens',nuevo_kaizen:'Nuevo Kaizen',sugerencias:'Sugerencias',muda:'8 Desperdicios MUDA',reportes:'Reportes',usuarios:'Usuarios',perfil:'Perfil QR',registro:'Nueva Empresa',admin:'Panel Fix-Ya'}
+const TITLES = {login:'Bienvenido',dashboard:'Dashboard',kaizens:'Kaizens',nuevo_kaizen:'Nuevo Kaizen',sugerencias:'Sugerencias',nueva_sugerencia:'Nueva Sugerencia',muda:'8 Desperdicios MUDA',reportes:'Reportes',usuarios:'Usuarios',perfil:'Perfil QR',registro:'Nueva Empresa',admin:'Panel Fix-Ya'}
 
 function nav(p) {
   currentPage = p
@@ -1581,7 +1582,7 @@ function nav(p) {
   document.getElementById('hd-title').textContent = TITLES[p]||p
   const c = document.getElementById('content')
   c.style.animation='none'; c.offsetHeight; c.style.animation='su .25s cubic-bezier(.16,1,.3,1)'
-  const fn = {login:renderLogin,dashboard:renderDashboard,kaizens:renderKaizens,nuevo_kaizen:renderNuevoKaizen,sugerencias:renderSugerencias,muda:renderMuda,reportes:renderReportes,usuarios:renderUsuarios,perfil:renderPerfil,registro:renderRegistro,admin:renderAdmin}
+  const fn = {login:renderLogin,dashboard:renderDashboard,kaizens:renderKaizens,nuevo_kaizen:renderNuevoKaizen,sugerencias:renderSugerencias,nueva_sugerencia:renderNuevaSugerencia,muda:renderMuda,reportes:renderReportes,usuarios:renderUsuarios,perfil:renderPerfil,registro:renderRegistro,admin:renderAdmin}
   if(fn[p]) fn[p]()
   else c.innerHTML=`<div style="text-align:center;padding:60px 20px;color:var(--gl)"><p style="font-size:48px;margin-bottom:12px">⚡</p><h2 style="font-family:Outfit,sans-serif;font-size:18px;font-weight:700;color:var(--n)">${TITLES[p]}</h2></div>`
   closeSidebar()
@@ -2379,10 +2380,115 @@ function renderSugerencias() {
       return '<div class="sc"><div class="sc-ico" style="font-size:16px;background:rgba(255,107,53,.1)">'+x[0]+'</div><div class="sc-n" style="font-size:22px">'+x[1]+'</div><div class="sc-l" style="font-size:11px">'+x[2]+'</div></div>'
     }).join('')
     +'</div>'
-    +'<div class="tc"><div class="tc-head"><div class="tc-title"><div class="tc-bar"></div>Administración de Sugerencias</div></div>'
+    +'<div class="tc"><div class="tc-head"><div class="tc-title"><div class="tc-bar"></div>Administración de Sugerencias</div><button class="btn btn-p" style="height:28px;font-size:11px" onclick="nav(\'nueva_sugerencia\')">✍️ Nueva</button></div>'
     +'<div class="tbl-wrap"><table>'
     +'<thead><tr><th>Folio</th><th>Descripción</th><th>Área</th><th>Enviado por</th><th>Estatus</th><th>Ahorro est.</th><th>Acción</th></tr></thead>'
     +'<tbody>'+rows+'</tbody></table></div></div>'
+}
+
+/* ═══ NUEVA SUGERENCIA — Formulario ═══ */
+function renderNuevaSugerencia() {
+  document.getElementById('content').innerHTML = `
+  <div style="max-width:620px">
+    <button onclick="nav('sugerencias')" style="display:flex;align-items:center;gap:5px;font-size:13px;color:var(--gr);border:none;background:none;cursor:pointer;margin-bottom:14px">← Volver a Sugerencias</button>
+
+    <!-- Definición -->
+    <div style="background:linear-gradient(135deg,rgba(217,119,6,.07),rgba(217,119,6,.02));border:1.5px solid rgba(217,119,6,.2);border-radius:13px;padding:14px 16px;margin-bottom:16px">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+        <div style="width:28px;height:28px;border-radius:8px;background:linear-gradient(135deg,#92400e,#d97706);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0">💡</div>
+        <p style="font-size:12px;font-weight:800;color:#92400e;font-family:'Outfit',sans-serif">¿Qué es una Sugerencia?</p>
+      </div>
+      <p style="font-size:12px;color:#b45309;line-height:1.6">Es algo que el colaborador <strong>identifica que se puede mejorar</strong>, pero necesita ser evaluado por otras personas para su aprobación e implementación.</p>
+    </div>
+
+    <div class="form-section">
+      <div class="fs-head"><div class="fs-bar"></div><h3 class="fs-title">Datos de la sugerencia</h3></div>
+      <div class="fs-body" style="display:flex;flex-direction:column;gap:14px">
+
+        <div class="fgrid" style="grid-template-columns:1fr 1fr">
+          <div class="fi">
+            <label>Tu nombre <span class="rq">*</span></label>
+            <input class="inp" id="sg-name" placeholder="Ej: Juan Carlos Ramírez">
+          </div>
+          <div class="fi">
+            <label>Área <span class="rq">*</span></label>
+            <select class="inp" id="sg-area">
+              ${['Producción','Calidad','Mantenimiento','Logística','Seguridad','Administración'].map(a=>`<option>${a}</option>`).join('')}
+            </select>
+          </div>
+        </div>
+
+        <div class="fi">
+          <label>Descripción de la mejora <span class="rq">*</span></label>
+          <textarea class="ta" id="sg-desc" placeholder="Describe qué es lo que identificaste que se puede mejorar..." style="min-height:100px"></textarea>
+        </div>
+
+        <div class="fi">
+          <label>¿Por qué crees que mejoraría el proceso?</label>
+          <textarea class="ta" id="sg-why" placeholder="Explica el beneficio que traería esta mejora..." style="min-height:80px"></textarea>
+        </div>
+
+        <div class="fi">
+          <label>Ahorro estimado mensual (MXN) — opcional</label>
+          <div style="position:relative">
+            <span style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--gr);font-weight:700;pointer-events:none">$</span>
+            <input type="number" class="inp" id="sg-savings" style="padding-left:22px" placeholder="0.00">
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <div style="display:flex;gap:10px;padding-bottom:24px;margin-top:4px">
+      <button class="btn btn-s" onclick="nav('sugerencias')" style="height:42px">Cancelar</button>
+      <button class="btn btn-p" style="height:42px;flex:1;justify-content:center;font-size:14px" onclick="saveSugerencia(this)">💡 Enviar sugerencia</button>
+    </div>
+  </div>`
+}
+
+async function saveSugerencia(btn) {
+  const name    = document.getElementById('sg-name')?.value?.trim()
+  const area    = document.getElementById('sg-area')?.value
+  const desc    = document.getElementById('sg-desc')?.value?.trim()
+  const why     = document.getElementById('sg-why')?.value?.trim()
+  const savings = parseFloat(document.getElementById('sg-savings')?.value || 0)
+
+  if (!name) { toast('error','⚠️ Ingresa tu nombre'); return }
+  if (!desc)  { toast('error','⚠️ Describe la mejora que propones'); return }
+
+  btn.textContent = '⏳ Enviando...'
+  btn.disabled = true
+
+  const fullDesc = desc + (why ? '\n\nBeneficio esperado: ' + why : '')
+  const folio = 'SUG-' + String(SUGS.length + 1).padStart(3,'0')
+
+  try {
+    const { data, error } = await db.from('suggestions').insert({
+      folio,
+      area,
+      description: fullDesc,
+      employee_name: name,
+      status: 'pendiente',
+      savings: savings * 12 || 0,
+      company_id: COMPANY_ID
+    }).select().single()
+
+    if (error) throw error
+
+    SUGS.unshift({
+      id: data.id, folio, area, desc: fullDesc,
+      employee: name, status: 'pendiente',
+      savings: savings * 12 || 0, adminComment: '', date: data.submission_date
+    })
+
+    toast('success', '✅ Sugerencia enviada correctamente — Folio: ' + folio)
+    setTimeout(() => nav('sugerencias'), 1200)
+  } catch(err) {
+    console.error(err)
+    toast('error', '⚠️ Error al guardar la sugerencia')
+    btn.textContent = '💡 Enviar sugerencia'
+    btn.disabled = false
+  }
 }
 
 // Abrir panel admin de sugerencia
