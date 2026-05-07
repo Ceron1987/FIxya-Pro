@@ -247,7 +247,7 @@ tbody tr:hover{background:rgba(255,179,71,.03)}
 
 /* Tablet (768 – 1023px) */
 @media(max-width:1023px){
-  :root{--sb-w:200px}
+  :root{--sb-w:220px}
   .hd-user-info{display:none}
   .stats-grid{grid-template-columns:repeat(2,1fr)}
   .fgrid{grid-template-columns:1fr 1fr}
@@ -255,6 +255,24 @@ tbody tr:hover{background:rgba(255,179,71,.03)}
   .impact-grid{grid-template-columns:repeat(3,1fr)}
   .type-opts{grid-template-columns:1fr 1fr}
   table{min-width:520px}
+}
+/* Tablet portrait — sidebar se oculta para dar más espacio */
+@media(max-width:900px){
+  .sb{transform:translateX(-100%)}
+  .sb.open{transform:translateX(0)}
+  .sb-close{display:flex}
+  .sb-overlay.open{display:block}
+  .mn{margin-left:0}
+  .hd-menu{display:flex}
+  .hd-user-info{display:none}
+  .stats-grid{grid-template-columns:repeat(2,1fr);gap:10px}
+  .charts-grid{grid-template-columns:1fr}
+  .fgrid{grid-template-columns:1fr}
+  .flow-grid{grid-template-columns:1fr!important}
+  .muda-cards{grid-template-columns:repeat(3,1fr)}
+  .pg{padding:16px}
+  .bnav{display:flex}
+  .pg{padding-bottom:100px!important}
 }
 
 /* Mobile (< 768px) */
@@ -336,6 +354,11 @@ tbody tr:hover{background:linear-gradient(90deg,rgba(255,179,71,.04),rgba(255,10
   table{min-width:480px}
   .toast-w{left:14px;right:14px}
   .toast{min-width:unset}
+  .tbl-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .hd-title{font-size:14px}
+  .sc-n{font-size:20px}
+  .sc-label{font-size:10px}
+  .modal{margin:12px;max-height:90vh;overflow-y:auto}
 }
 
 /* ══ TICKER HORIZONTAL FLOTANTE ══ */
@@ -1412,8 +1435,8 @@ tbody tr:hover{
   </div>
   <div class="sb-foot">
     <div class="usr-card">
-      <div class="usr-av">A</div>
-      <div style="overflow:hidden;flex:1"><p style="font-size:11px;font-weight:600;color:white;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Admin Sistema</p><span style="font-size:10px;color:rgba(255,255,255,.38)">Administrador</span></div>
+      <div class="usr-av" id="sb-user-av">A</div>
+      <div style="overflow:hidden;flex:1"><p id="sb-user-name" style="font-size:11px;font-weight:600;color:white;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Admin Sistema</p><span style="font-size:10px;color:rgba(255,255,255,.38)">Administrador</span></div>
     </div>
   </div>
 </nav>
@@ -1429,8 +1452,8 @@ tbody tr:hover{
     <div class="hd-r">
       <button id="darkToggle" onclick="toggleDark()" title="Modo oscuro" style="width:32px;height:32px;border-radius:8px;border:1px solid var(--cb);background:white;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;transition:.2s;margin-right:2px">🌙</button><div class="hd-notif" onclick="toast('info','Sin notificaciones nuevas')"><span>🔔</span><div class="notif-dot"></div></div>
       <div class="hd-user">
-        <div class="hd-user-info"><p style="font-size:12px;font-weight:600;color:var(--n);line-height:1">Admin Sistema</p><span style="font-size:10px;color:var(--gr)">Administración</span></div>
-        <div class="hd-av">A</div>
+        <div class="hd-user-info"><p id="hd-user-name" style="font-size:12px;font-weight:600;color:var(--n);line-height:1">Admin Sistema</p><span style="font-size:10px;color:var(--gr)">Administración</span></div>
+        <div class="hd-av" id="hd-user-av">A</div>
         <span class="pl pl-adm" style="font-size:10px">Admin</span>
       </div>
     </div>
@@ -1495,10 +1518,33 @@ let SUGS = []
 
 /* ═══ STATE ═══ */
 let currentPage = 'dashboard'
+let currentUserName = 'Admin'
+
+function getGreeting() {
+  const h = new Date().getHours()
+  if (h >= 6 && h < 12) return 'Buenos días'
+  if (h >= 12 && h < 19) return 'Buenas tardes'
+  return 'Buenas noches'
+}
+
+function updateUserUI(name) {
+  currentUserName = name || 'Admin'
+  const initial = currentUserName.charAt(0).toUpperCase()
+  const sbName = document.getElementById('sb-user-name')
+  const sbAv   = document.getElementById('sb-user-av')
+  const hdName = document.getElementById('hd-user-name')
+  const hdAv   = document.getElementById('hd-user-av')
+  if (sbName) sbName.textContent = currentUserName
+  if (sbAv)   sbAv.textContent  = initial
+  if (hdName) hdName.textContent = currentUserName
+  if (hdAv)   hdAv.textContent  = initial
+}
 let selectedType = 'individual'
 let selectedImpacts = []
 let selectedMuda = []
 let individualName = ''
+let photoBeforeData = ''
+let photoAfterData  = ''
 let groupNames = ['','']  // Mínimo 2 para grupal
 let activeMuda = null
 let hoveredMuda = null
@@ -1521,7 +1567,7 @@ function nav(p) {
     if (tick) { tick.style.display='none' }
   } else {
     if (sb)   { sb.style.display='flex' }
-    if (mn)   { mn.style.marginLeft='var(--sb-w)' }
+    if (mn)   { mn.style.marginLeft = window.innerWidth > 900 ? 'var(--sb-w)' : '0' }
     if (tick) { tick.style.display='flex' }
   }
   document.querySelectorAll('.ni').forEach(n=>n.classList.remove('on'))
@@ -1539,6 +1585,12 @@ function nav(p) {
 
 function openSidebar() { document.getElementById('sb').classList.add('open'); document.getElementById('overlay').classList.add('open') }
 function closeSidebar() { document.getElementById('sb').classList.remove('open'); document.getElementById('overlay').classList.remove('open') }
+
+window.addEventListener('resize', function() {
+  if (currentPage === 'login') return
+  const mn = document.querySelector('.mn')
+  if (mn) mn.style.marginLeft = window.innerWidth > 900 ? 'var(--sb-w)' : '0'
+})
 
 function toggleDark() {
   const root = document.documentElement
@@ -1672,8 +1724,8 @@ function renderDashboard() {
 
   document.getElementById('content').innerHTML =
     '<div style="margin-bottom:16px">'
-    +'<h2 style="font-family:\'Outfit\',sans-serif;font-size:20px;font-weight:800;color:var(--n)">Buenos días, Admin 👋</h2>'
-    +'<p style="font-size:13px;color:var(--gr);margin-top:2px">Abril 2025 · Querétaro, México</p>'
+    +'<h2 style="font-family:\'Outfit\',sans-serif;font-size:20px;font-weight:800;color:var(--n)">'+getGreeting()+', '+currentUserName+' 👋</h2>'
+    +'<p style="font-size:13px;color:var(--gr);margin-top:2px">'+new Date().toLocaleDateString('es-MX',{weekday:'long',year:'numeric',month:'long'}).replace(/^\w/,c=>c.toUpperCase())+' · Querétaro, México</p>'
     +'</div>'
     +'<div class="stats-grid">'+kpiCards+'</div>'
     +'<div style="display:grid;grid-template-columns:1fr 300px;gap:14px;margin-bottom:14px" class="flow-grid">'
@@ -2142,22 +2194,38 @@ function previewFoto(input, slot) {
   const file = input.files[0]
   const reader = new FileReader()
   reader.onload = function(e) {
-    const box = document.getElementById('preview-' + slot)
-    if (!box) return
-    box.style.border = '2px solid var(--o)'
-    box.style.background = '#000'
-    box.innerHTML = '<img src="' + e.target.result + '" style="width:100%;height:100%;object-fit:cover;display:block" />'
-      + '<div style="position:absolute;bottom:0;left:0;right:0;background:linear-gradient(0deg,rgba(0,0,0,.7),transparent);padding:6px 8px">'
-      + '<p style="font-size:10px;font-weight:700;color:white">' + (slot==='before'?'📸 ANTES':'📸 DESPUÉS') + ' · ' + (file.size/1024).toFixed(0) + ' KB</p>'
-      + '</div>'
-    const delBtn = document.getElementById('del-' + slot)
-    if (delBtn) delBtn.style.display = 'flex'
-    toast('success', slot==='before' ? '✅ Foto ANTES cargada' : '✅ Foto DESPUÉS cargada')
+    const img = new Image()
+    img.onload = function() {
+      const MAX_W = 1024
+      const scale = img.width > MAX_W ? MAX_W / img.width : 1
+      const cv = document.createElement('canvas')
+      cv.width  = Math.round(img.width  * scale)
+      cv.height = Math.round(img.height * scale)
+      cv.getContext('2d').drawImage(img, 0, 0, cv.width, cv.height)
+      const compressed = cv.toDataURL('image/jpeg', 0.72)
+      if (slot === 'before') photoBeforeData = compressed
+      else                   photoAfterData  = compressed
+
+      const box = document.getElementById('preview-' + slot)
+      if (!box) return
+      box.style.border = '2px solid var(--o)'
+      box.style.background = '#000'
+      box.innerHTML = '<img src="' + compressed + '" style="width:100%;height:100%;object-fit:cover;display:block" />'
+        + '<div style="position:absolute;bottom:0;left:0;right:0;background:linear-gradient(0deg,rgba(0,0,0,.7),transparent);padding:6px 8px">'
+        + '<p style="font-size:10px;font-weight:700;color:white">' + (slot==='before'?'📸 ANTES':'📸 DESPUÉS') + ' · ' + Math.round(compressed.length/1024) + ' KB</p>'
+        + '</div>'
+      const delBtn = document.getElementById('del-' + slot)
+      if (delBtn) delBtn.style.display = 'flex'
+      toast('success', slot==='before' ? '✅ Foto ANTES cargada' : '✅ Foto DESPUÉS cargada')
+    }
+    img.src = e.target.result
   }
   reader.readAsDataURL(file)
 }
 
 function deleteFoto(slot) {
+  if (slot === 'before') photoBeforeData = ''
+  else                   photoAfterData  = ''
   const box = document.getElementById('preview-' + slot)
   const inp = document.getElementById('input-' + slot)
   const del = document.getElementById('del-' + slot)
@@ -2211,7 +2279,12 @@ async function saveKaizen() {
     impacts: [...selectedImpacts],
     muda: [...selectedMuda],
     savings: savingsA || savingsM*12 || 0,
-    description: context || ''
+    context:    context   || '',
+    procedure:  procedure || '',
+    results:    results   || '',
+    beforePhoto: photoBeforeData,
+    afterPhoto:  photoAfterData,
+    description: context  || ''
   }
 
   // Guardar en Supabase primero
@@ -2227,181 +2300,187 @@ async function saveKaizen() {
   selectedMuda=[]
   individualName=''
   groupNames=['','']
+  photoBeforeData=''
+  photoAfterData=''
 
   toast('success',`⚡ Kaizen "${title}" guardado correctamente`)
   setTimeout(()=>nav('kaizens'),1000)
 }
 
 /* ═══ SUGERENCIAS ═══ */
+/* ─── Catálogo de estatus de sugerencias ─── */
+const SUG_STATUSES = [
+  { id:'pendiente',                  ico:'⏳', label:'Pendiente',                      color:'#d97706', bg:'rgba(217,119,6,.08)',   border:'rgba(217,119,6,.25)',   pl:'pl-pen' },
+  { id:'revision_jefe',              ico:'👔', label:'En revisión — Jefe Directo',     color:'#2563eb', bg:'rgba(37,99,235,.08)',   border:'rgba(37,99,235,.25)',   pl:'pl-rev' },
+  { id:'revision_gerencia',          ico:'🏢', label:'En revisión — Gerencia',         color:'#7c3aed', bg:'rgba(124,58,237,.08)',  border:'rgba(124,58,237,.25)',  pl:'pl-rev' },
+  { id:'evaluacion_implementacion',  ico:'🔍', label:'En evaluación de implementación',color:'#0891b2', bg:'rgba(8,145,178,.08)',   border:'rgba(8,145,178,.25)',   pl:'pl-rev' },
+  { id:'implementando',              ico:'⚙️', label:'En implementación',              color:'#059669', bg:'rgba(5,150,105,.08)',   border:'rgba(5,150,105,.25)',   pl:'pl-apr' },
+  { id:'implementada',               ico:'🚀', label:'Implementada',                   color:'#15803d', bg:'rgba(21,128,61,.1)',    border:'rgba(21,128,61,.3)',    pl:'pl-imp' },
+  { id:'rechazada',                  ico:'❌', label:'Rechazada',                      color:'#dc2626', bg:'rgba(220,38,38,.07)',   border:'rgba(220,38,38,.2)',    pl:'pl-rec' },
+]
+
+function sugStatus(id) {
+  return SUG_STATUSES.find(function(s){ return s.id === id }) || SUG_STATUSES[0]
+}
+
 function renderSugerencias() {
-  const SL={aprobada:'pl-apr',en_revision:'pl-rev',pendiente:'pl-pen',implementada:'pl-imp',rechazada:'pl-rec'}
-  const SN={aprobada:'Aprobada',en_revision:'En revisión',pendiente:'Pendiente',implementada:'Implementada',rechazada:'Rechazada'}
-  const SI={aprobada:'✅',en_revision:'🔄',pendiente:'⏳',implementada:'🚀',rechazada:'❌'}
+  const pending = SUGS.filter(function(s){ return s.status==='pendiente'||s.status==='revision_jefe'||s.status==='revision_gerencia' }).length
+  const total   = SUGS.length
+  const impl    = SUGS.filter(function(s){ return s.status==='implementada' }).length
+  const enProceso = SUGS.filter(function(s){ return s.status==='evaluacion_implementacion'||s.status==='implementando' }).length
 
   const rows = SUGS.map(function(s) {
+    const st = sugStatus(s.status)
     return '<tr>'
       +'<td><span style="font-family:\'JetBrains Mono\',monospace;font-size:11px;font-weight:700;color:var(--o)">'+s.folio+'</span></td>'
       +'<td style="max-width:200px"><p style="font-size:12px;font-weight:500;color:var(--n);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+s.desc+'</p></td>'
       +'<td style="font-size:12px">'+s.area+'</td>'
       +'<td><div style="display:flex;align-items:center;gap:5px"><div style="width:20px;height:20px;border-radius:50%;background:var(--o);display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;color:white">'+s.employee.charAt(0)+'</div><span style="font-size:12px">'+s.employee.split(' ')[0]+'</span></div></td>'
-      +'<td><span class="pl '+SL[s.status]+'">'+SI[s.status]+' '+SN[s.status]+'</span></td>'
+      +'<td><span style="display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:700;background:'+st.bg+';color:'+st.color+';border:1px solid '+st.border+'">'+st.ico+' '+st.label+'</span></td>'
       +'<td style="font-family:\'JetBrains Mono\',monospace;font-weight:700;font-size:12px;color:var(--g)">'+(s.savings>0?fmxn(s.savings):'—')+'</td>'
-      +'<td><button class="btn btn-p" style="height:26px;padding:0 10px;font-size:11px" onclick="openSug('+s.id+')">Ver →</button></td>'
+      +'<td><button class="btn btn-p" style="height:26px;padding:0 10px;font-size:11px" onclick="openSug('+s.id+')">Gestionar →</button></td>'
       +'</tr>'
   }).join('')
 
   document.getElementById('content').innerHTML =
-    '<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-radius:12px;background:rgba(255,107,53,.07);border:1.5px solid rgba(255,107,53,.2);margin-bottom:16px;flex-wrap:wrap;gap:8px">'
-    +'<div style="display:flex;align-items:center;gap:10px"><div style="width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,#E55A26,var(--o));display:flex;align-items:center;justify-content:center;font-size:16px">✅</div>'
-    +'<div><p style="font-size:13px;font-weight:700;color:var(--n)">Tienes 3 sugerencias pendientes de aprobación</p></div></div>'
-    +'<button class="btn btn-p" style="height:30px;font-size:11px">Ver pendientes →</button></div>'
-    +'<div class="stats-grid">'
-    +[['💡','31','Total'],['⏳','12','Pendientes'],['✅','8','Aprobadas'],['🚀','4','Implementadas']].map(function(x){return '<div class="sc"><div class="sc-ico" style="font-size:16px;background:rgba(255,107,53,.1)">'+x[0]+'</div><div class="sc-n" style="font-size:22px">'+x[1]+'</div><div class="sc-l" style="font-size:11px">'+x[2]+'</div></div>'}).join('')
+    (pending > 0
+      ? '<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-radius:12px;background:rgba(217,119,6,.07);border:1.5px solid rgba(217,119,6,.25);margin-bottom:16px;flex-wrap:wrap;gap:8px">'
+        +'<div style="display:flex;align-items:center;gap:10px"><div style="width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,#d97706,#f59e0b);display:flex;align-items:center;justify-content:center;font-size:16px">⏳</div>'
+        +'<div><p style="font-size:13px;font-weight:700;color:var(--n)">'+pending+' sugerencia'+( pending>1?'s':'')+' pendiente'+(pending>1?'s':'')+' de revisión</p>'
+        +'<p style="font-size:11px;color:var(--gl)">Haz clic en "Gestionar" para cambiar el estatus</p></div></div></div>'
+      : '')
+    +'<div class="stats-grid" style="margin-bottom:16px">'
+    +[['💡',total,'Total'],['⏳',pending,'Por revisar'],['⚙️',enProceso,'En proceso'],['🚀',impl,'Implementadas']].map(function(x){
+      return '<div class="sc"><div class="sc-ico" style="font-size:16px;background:rgba(255,107,53,.1)">'+x[0]+'</div><div class="sc-n" style="font-size:22px">'+x[1]+'</div><div class="sc-l" style="font-size:11px">'+x[2]+'</div></div>'
+    }).join('')
     +'</div>'
-    +'<div class="tc"><div class="tc-head"><div class="tc-title"><div class="tc-bar"></div>Sugerencias</div>'
-    +'<button class="btn btn-p" style="height:28px;font-size:11px">+ Nueva</button></div>'
+    +'<div class="tc"><div class="tc-head"><div class="tc-title"><div class="tc-bar"></div>Administración de Sugerencias</div></div>'
     +'<div class="tbl-wrap"><table>'
-    +'<thead><tr><th>Folio</th><th>Descripción</th><th>Área</th><th>Empleado</th><th>Estado</th><th>Ahorro</th><th></th></tr></thead>'
+    +'<thead><tr><th>Folio</th><th>Descripción</th><th>Área</th><th>Enviado por</th><th>Estatus</th><th>Ahorro est.</th><th>Acción</th></tr></thead>'
     +'<tbody>'+rows+'</tbody></table></div></div>'
 }
 
-// Abrir detalle de sugerencia con workflow N1→N2
+// Abrir panel admin de sugerencia
 function openSug(id) {
   const s = SUGS.find(function(x){return x.id===id})
   if(!s) return
-
-  const SN={aprobada:'Aprobada',en_revision:'En revisión',pendiente:'Pendiente',implementada:'Implementada',rechazada:'Rechazada'}
-  const SL={aprobada:'pl-apr',en_revision:'pl-rev',pendiente:'pl-pen',implementada:'pl-imp',rechazada:'pl-rec'}
-  const SI={aprobada:'✅',en_revision:'🔄',pendiente:'⏳',implementada:'🚀',rechazada:'❌'}
-
-  // Estado de cada nivel
-  const n1st = s.n1==='Aprobado' ? {color:'#15803d',bg:'rgba(82,183,136,.1)',border:'rgba(82,183,136,.3)',ico:'✅',label:'Aprobado'}
-             : s.n1==='Rechazado'? {color:'#dc2626',bg:'rgba(220,38,38,.08)',border:'rgba(220,38,38,.2)',ico:'❌',label:'Rechazado'}
-             : {color:'#d97706',bg:'rgba(217,119,6,.08)',border:'rgba(217,119,6,.2)',ico:'⏳',label:'Pendiente'}
-
-  const n2st = s.n2==='Aprobado' ? {color:'#15803d',bg:'rgba(82,183,136,.1)',border:'rgba(82,183,136,.3)',ico:'✅',label:'Aprobado'}
-             : s.n2==='Rechazado'? {color:'#dc2626',bg:'rgba(220,38,38,.08)',border:'rgba(220,38,38,.2)',ico:'❌',label:'Rechazado'}
-             : s.n2==='—'        ? {color:'#9CA3AF',bg:'rgba(156,163,175,.08)',border:'rgba(156,163,175,.2)',ico:'⛔',label:'No aplica'}
-             : {color:'#d97706',bg:'rgba(217,119,6,.08)',border:'rgba(217,119,6,.2)',ico:'⏳',label:'Pendiente'}
-
-  // Conector entre N1 y N2
-  const connColor = s.n1==='Aprobado' ? '#52B788' : '#EBE0D0'
+  const currentSt = sugStatus(s.status)
 
   const modal = document.createElement('div')
   modal.style.cssText='position:fixed;inset:0;z-index:500;display:flex;align-items:flex-start;justify-content:center;padding:20px 16px;background:rgba(27,42,74,.55);backdrop-filter:blur(5px);overflow-y:auto'
   modal.onclick=function(e){if(e.target===modal)modal.remove()}
 
+  // Construir tarjetas de estatus
+  const statusCards = SUG_STATUSES.map(function(st) {
+    const isActive = s.status === st.id
+    return '<label style="display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:12px;border:2px solid '+(isActive?st.border:'var(--cb)')+';background:'+(isActive?st.bg:'white')+';cursor:pointer;transition:.15s;margin-bottom:6px" onclick="sugSelectStatus(this,\''+st.id+'\')">'
+      +'<input type="radio" name="sugStatus" value="'+st.id+'" '+(isActive?'checked':'')+' style="display:none">'
+      +'<div style="width:36px;height:36px;border-radius:10px;background:'+(isActive?st.bg:'rgba(156,163,175,.08)')+';border:1.5px solid '+(isActive?st.border:'rgba(156,163,175,.2)')+';display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;transition:.15s">'+st.ico+'</div>'
+      +'<div style="flex:1"><p style="font-size:13px;font-weight:700;color:'+(isActive?st.color:'var(--n)')+'">'+st.label+'</p></div>'
+      +(isActive?'<div style="width:20px;height:20px;border-radius:50%;background:'+st.color+';display:flex;align-items:center;justify-content:center"><svg width="11" height="11" viewBox="0 0 12 12"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" fill="none" stroke-linecap="round"/></svg></div>':'<div style="width:20px;height:20px;border-radius:50%;border:2px solid var(--cb)"></div>')
+      +'</label>'
+  }).join('')
+
   modal.innerHTML =
-    '<div style="background:white;border-radius:18px;overflow:hidden;width:100%;max-width:600px;box-shadow:0 24px 80px rgba(27,42,74,.35);animation:pop .2s cubic-bezier(.16,1,.3,1);margin:auto">'
+    '<div style="background:white;border-radius:18px;overflow:hidden;width:100%;max-width:620px;box-shadow:0 24px 80px rgba(27,42,74,.35);animation:pop .2s cubic-bezier(.16,1,.3,1);margin:auto">'
 
     // ── Header ──
     +'<div style="background:linear-gradient(135deg,#1B2A4A,#2E4070);padding:16px 20px;display:flex;align-items:flex-start;justify-content:space-between;gap:10px">'
-    +'<div><p style="font-size:10px;font-family:\'JetBrains Mono\',monospace;color:rgba(255,255,255,.45);margin-bottom:3px">'+s.folio+'</p>'
-    +'<p style="font-size:15px;font-weight:800;color:white;line-height:1.3">'+s.desc+'</p></div>'
-    +'<button onclick="this.closest(\'[style]\').remove()" style="width:28px;height:28px;border-radius:8px;border:none;background:rgba(255,255,255,.1);color:rgba(255,255,255,.6);cursor:pointer;font-size:15px;flex-shrink:0">✕</button>'
-    +'</div>'
-
-    // ── Info básica ──
-    +'<div style="display:grid;grid-template-columns:1fr 1fr 1fr;border-bottom:1px solid var(--cb)">'
-    +[['📍 Área',s.area],['👤 Enviada por',s.employee.split(' ')[0]],['💰 Ahorro est.',s.savings>0?fmxn(s.savings):'No estimado']].map(function(x){
-      return '<div style="padding:12px 16px;border-right:1px solid var(--cb)">'
-        +'<p style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--gl);font-family:\'JetBrains Mono\',monospace;margin-bottom:4px">'+x[0]+'</p>'
-        +'<p style="font-size:13px;font-weight:700;color:var(--n)">'+x[1]+'</p></div>'
-    }).join('')
+    +'<div><p style="font-size:10px;font-family:\'JetBrains Mono\',monospace;color:rgba(255,255,255,.45);margin-bottom:3px;letter-spacing:1px">'+s.folio+' · Gestión de estatus</p>'
+    +'<p style="font-size:15px;font-weight:800;color:white;line-height:1.3;max-width:440px">'+s.desc+'</p>'
+    +'<div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">'
+    +'<span style="font-size:10px;padding:2px 8px;border-radius:10px;background:rgba(255,255,255,.1);color:rgba(255,255,255,.7)">📍 '+s.area+'</span>'
+    +'<span style="font-size:10px;padding:2px 8px;border-radius:10px;background:rgba(255,255,255,.1);color:rgba(255,255,255,.7)">👤 '+s.employee+'</span>'
+    +(s.savings>0?'<span style="font-size:10px;padding:2px 8px;border-radius:10px;background:rgba(82,183,136,.2);color:#86efac">💰 '+fmxn(s.savings)+'/año</span>':'')
+    +'</div></div>'
+    +'<button onclick="this.closest(\'div[style*=fixed]\').remove()" style="width:30px;height:30px;border-radius:9px;border:none;background:rgba(255,255,255,.1);color:rgba(255,255,255,.7);cursor:pointer;font-size:16px;flex-shrink:0;display:flex;align-items:center;justify-content:center">✕</button>'
     +'</div>'
 
     // ── Descripción ──
+    +'<div style="padding:14px 20px;border-bottom:1px solid var(--cb);background:#fafaf9">'
+    +'<p style="font-size:10px;font-weight:700;letter-spacing:1px;color:var(--gl);font-family:\'JetBrains Mono\',monospace;margin-bottom:5px">📝 DESCRIPCIÓN DE LA MEJORA</p>'
+    +'<p style="font-size:13px;color:var(--n);line-height:1.6">'+s.desc+'</p>'
+    +(s.adminComment?'<div style="margin-top:10px;padding:10px 12px;border-radius:9px;background:rgba(220,38,38,.06);border:1px solid rgba(220,38,38,.18)"><p style="font-size:10px;font-weight:700;color:#dc2626;margin-bottom:3px">💬 Comentario anterior</p><p style="font-size:12px;color:#7f1d1d">'+s.adminComment+'</p></div>':'')
+    +'</div>'
+
+    // ── Selector de estatus ──
     +'<div style="padding:16px 20px;border-bottom:1px solid var(--cb)">'
-    +'<p style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--gl);font-family:\'JetBrains Mono\',monospace;margin-bottom:7px">📝 Descripción completa</p>'
-    +'<p style="font-size:13px;color:var(--n);line-height:1.7">'+s.desc+'. Esta mejora fue identificada por el equipo del área de '+s.area+' como una oportunidad de optimización que puede impactar directamente en los indicadores de productividad y calidad de la planta.</p>'
+    +'<p style="font-size:10px;font-weight:700;letter-spacing:1px;color:var(--gl);font-family:\'JetBrains Mono\',monospace;margin-bottom:12px">🔄 CAMBIAR ESTATUS</p>'
+    +'<div id="sug-status-cards">'+statusCards+'</div>'
     +'</div>'
 
-    // ── Beneficios ──
-    +'<div style="padding:14px 20px;border-bottom:1px solid var(--cb);background:var(--c)">'
-    +'<p style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--gl);font-family:\'JetBrains Mono\',monospace;margin-bottom:8px">✨ Beneficios esperados</p>'
-    +'<div style="display:flex;flex-wrap:wrap;gap:7px">'
-    +['Reducción de tiempos','Ahorro en costos operativos','Mejora de calidad','Mayor seguridad'].map(function(b){
-      return '<span style="display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700;background:rgba(82,183,136,.1);color:#15803d;border:1px solid rgba(82,183,136,.25)">✓ '+b+'</span>'
-    }).join('')
-    +'</div></div>'
-
-    // ── WORKFLOW N1 → N2 ──
+    // ── Comentario ──
     +'<div style="padding:16px 20px;border-bottom:1px solid var(--cb)">'
-    +'<p style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--gl);font-family:\'JetBrains Mono\',monospace;margin-bottom:12px">🔄 Workflow de aprobación</p>'
-
-    // Pasos del workflow
-    +'<div style="display:flex;align-items:center;gap:0">'
-
-    // Paso 1: Empleado
-    +'<div style="text-align:center;flex:1">'
-    +'<div style="width:44px;height:44px;border-radius:12px;background:rgba(82,183,136,.12);border:2px solid rgba(82,183,136,.3);display:flex;align-items:center;justify-content:center;font-size:20px;margin:0 auto 6px">👤</div>'
-    +'<p style="font-size:11px;font-weight:700;color:var(--n)">'+s.employee.split(' ')[0]+'</p>'
-    +'<p style="font-size:9px;color:var(--gl)">Autor</p>'
-    +'<span style="display:inline-block;padding:2px 8px;border-radius:20px;font-size:9px;font-weight:700;margin-top:4px;background:rgba(82,183,136,.12);color:#15803d;border:1px solid rgba(82,183,136,.25)">✓ Enviado</span>'
+    +'<p style="font-size:10px;font-weight:700;letter-spacing:1px;color:var(--gl);font-family:\'JetBrains Mono\',monospace;margin-bottom:8px">💬 COMENTARIO / RETROALIMENTACIÓN</p>'
+    +'<textarea id="sug-comment" placeholder="Escribe un comentario para el empleado (requerido si rechazas, opcional en otros casos)..." style="width:100%;min-height:80px;padding:10px 12px;border-radius:10px;border:1.5px solid var(--cb);font-size:13px;font-family:Plus Jakarta Sans,sans-serif;resize:vertical;outline:none;color:var(--n);box-sizing:border-box;transition:.2s" onfocus="this.style.borderColor=\'var(--o)\'" onblur="this.style.borderColor=\'var(--cb)\'">'+( s.adminComment||'')+'</textarea>'
     +'</div>'
 
-    // Flecha 1→2
-    +'<div style="display:flex;flex-direction:column;align-items:center;gap:2px;flex-shrink:0;padding:0 4px">'
-    +'<div style="height:2px;width:40px;background:'+connColor+';border-radius:2px"></div>'
-    +'<span style="font-size:9px;font-weight:700;color:'+connColor+'">→</span>'
+    // ── Botones ──
+    +'<div style="padding:14px 20px;display:flex;justify-content:flex-end;gap:10px;background:#fafaf9">'
+    +'<button class="btn btn-s" style="height:38px;font-size:13px" onclick="this.closest(\'div[style*=fixed]\').remove()">Cancelar</button>'
+    +'<button class="btn btn-p" style="height:38px;font-size:13px;min-width:140px" id="sug-save-btn" onclick="saveSugStatus('+s.id+',this)">💾 Guardar cambios</button>'
     +'</div>'
 
-    // Paso 2: N1
-    +'<div style="text-align:center;flex:1">'
-    +'<div style="width:44px;height:44px;border-radius:12px;background:'+n1st.bg+';border:2px solid '+n1st.border+';display:flex;align-items:center;justify-content:center;font-size:20px;margin:0 auto 6px">'+n1st.ico+'</div>'
-    +'<p style="font-size:11px;font-weight:700;color:var(--n)">Jefe Directo</p>'
-    +'<p style="font-size:9px;color:var(--gl)">Nivel 1</p>'
-    +'<span style="display:inline-block;padding:2px 8px;border-radius:20px;font-size:9px;font-weight:700;margin-top:4px;background:'+n1st.bg+';color:'+n1st.color+';border:1px solid '+n1st.border+'">'+n1st.label+'</span>'
     +'</div>'
-
-    // Flecha 2→3
-    +'<div style="display:flex;flex-direction:column;align-items:center;gap:2px;flex-shrink:0;padding:0 4px">'
-    +'<div style="height:2px;width:40px;background:'+(s.n1==='Aprobado'?connColor:'var(--cb)')+';border-radius:2px"></div>'
-    +'<span style="font-size:9px;font-weight:700;color:'+(s.n1==='Aprobado'?connColor:'var(--gl)')+'">→</span>'
-    +'</div>'
-
-    // Paso 3: N2
-    +'<div style="text-align:center;flex:1">'
-    +'<div style="width:44px;height:44px;border-radius:12px;background:'+n2st.bg+';border:2px solid '+n2st.border+';display:flex;align-items:center;justify-content:center;font-size:20px;margin:0 auto 6px">'+n2st.ico+'</div>'
-    +'<p style="font-size:11px;font-weight:700;color:var(--n)">Gerente</p>'
-    +'<p style="font-size:9px;color:var(--gl)">Nivel 2</p>'
-    +'<span style="display:inline-block;padding:2px 8px;border-radius:20px;font-size:9px;font-weight:700;margin-top:4px;background:'+n2st.bg+';color:'+n2st.color+';border:1px solid '+n2st.border+'">'+n2st.label+'</span>'
-    +'</div>'
-
-    // Flecha 3→final
-    +'<div style="display:flex;flex-direction:column;align-items:center;gap:2px;flex-shrink:0;padding:0 4px">'
-    +'<div style="height:2px;width:40px;background:'+(s.status==='implementada'||s.status==='aprobada'?connColor:'var(--cb)')+';border-radius:2px"></div>'
-    +'<span style="font-size:9px;font-weight:700;color:'+(s.status==='implementada'||s.status==='aprobada'?connColor:'var(--gl)')+'">→</span>'
-    +'</div>'
-
-    // Paso 4: Implementación
-    +'<div style="text-align:center;flex:1">'
-    +'<div style="width:44px;height:44px;border-radius:12px;background:'+(s.status==='implementada'?'rgba(82,183,136,.12)':'rgba(156,163,175,.08)')+';border:2px solid '+(s.status==='implementada'?'rgba(82,183,136,.3)':'rgba(156,163,175,.2)')+';display:flex;align-items:center;justify-content:center;font-size:20px;margin:0 auto 6px">'+(s.status==='implementada'?'🚀':'⏸')+'</div>'
-    +'<p style="font-size:11px;font-weight:700;color:var(--n)">Implementación</p>'
-    +'<p style="font-size:9px;color:var(--gl)">Final</p>'
-    +'<span style="display:inline-block;padding:2px 8px;border-radius:20px;font-size:9px;font-weight:700;margin-top:4px;background:'+(s.status==='implementada'?'rgba(82,183,136,.12)':'rgba(156,163,175,.08)')+';color:'+(s.status==='implementada'?'#15803d':'var(--gl)')+';border:1px solid '+(s.status==='implementada'?'rgba(82,183,136,.25)':'rgba(156,163,175,.2)')+'">'+( s.status==='implementada'?'Completada':'Pendiente')+'</span>'
-    +'</div>'
-    +'</div>'  // end workflow flex
-    +'</div>'  // end workflow section
-
-    // ── Estado actual ──
-    +'<div style="padding:14px 20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;background:var(--c)">'
-    +'<div style="display:flex;align-items:center;gap:10px">'
-    +'<span style="font-size:13px;font-weight:700;color:var(--n)">Estado actual:</span>'
-    +'<span class="pl '+SL[s.status]+'" style="font-size:12px">'+SI[s.status]+' '+SN[s.status]+'</span>'
-    +'</div>'
-    +'<div style="display:flex;gap:8px;flex-wrap:wrap">'
-    +(s.status==='pendiente'||s.status==='en_revision'
-      ? '<button class="btn btn-g" style="height:32px;font-size:12px" onclick="approveSug('+s.id+',\'n1\',this)">✅ Aprobar N1</button>'
-        +'<button style="height:32px;padding:0 14px;border-radius:9px;border:1.5px solid rgba(220,38,38,.3);background:rgba(220,38,38,.07);color:#dc2626;font-size:12px;font-weight:700;cursor:pointer" onclick="rejectSug('+s.id+',this)">❌ Rechazar</button>'
-      : '')
-    +'<button class="btn btn-s" style="height:32px;font-size:12px" onclick="this.closest(\'[style]\').remove()">Cerrar</button>'
-    +'</div>'
-    +'</div>'
-
-    +'</div>'  // end modal card
 
   document.body.appendChild(modal)
+}
+
+function sugSelectStatus(label, statusId) {
+  // Marcar la tarjeta seleccionada visualmente
+  const cards = label.closest('#sug-status-cards').querySelectorAll('label')
+  const st = sugStatus(statusId)
+  cards.forEach(function(card) {
+    const val = card.querySelector('input').value
+    const cardSt = sugStatus(val)
+    const isThis = val === statusId
+    card.style.borderColor   = isThis ? cardSt.border : 'var(--cb)'
+    card.style.background    = isThis ? cardSt.bg : 'white'
+    const ico = card.querySelector('div:nth-child(2)')
+    if (ico) { ico.style.borderColor = isThis ? cardSt.border : 'rgba(156,163,175,.2)'; ico.style.background = isThis ? cardSt.bg : 'rgba(156,163,175,.08)' }
+    const txt = card.querySelector('p')
+    if (txt) txt.style.color = isThis ? cardSt.color : 'var(--n)'
+    const check = card.querySelector('div:last-child')
+    if (check) {
+      check.style.background = isThis ? cardSt.color : 'transparent'
+      check.style.border     = isThis ? 'none' : '2px solid var(--cb)'
+      check.innerHTML = isThis ? '<svg width="11" height="11" viewBox="0 0 12 12"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" fill="none" stroke-linecap="round"/></svg>' : ''
+    }
+    card.querySelector('input').checked = isThis
+  })
+  // Mostrar placeholder obligatorio si es rechazo
+  const textarea = label.closest('div[style*=fixed]').querySelector('#sug-comment')
+  if (textarea) textarea.placeholder = statusId === 'rechazada'
+    ? '⚠️ Requerido: explica el motivo del rechazo al empleado...'
+    : 'Escribe un comentario para el empleado (opcional)...'
+}
+
+async function saveSugStatus(id, btn) {
+  const s = SUGS.find(x => x.id === id)
+  if (!s) return
+  const modal = btn.closest('div[style*=fixed]')
+  const selectedInput = modal.querySelector('input[name="sugStatus"]:checked')
+  const comment = (modal.querySelector('#sug-comment').value || '').trim()
+  if (!selectedInput) { toast('error','Selecciona un estatus'); return }
+  const newStatus = selectedInput.value
+  if (newStatus === 'rechazada' && !comment) {
+    toast('error','Escribe el motivo del rechazo')
+    modal.querySelector('#sug-comment').focus()
+    return
+  }
+  btn.textContent = '⏳ Guardando...'
+  btn.disabled = true
+  const ok = await sbUpdateSuggestion(id, { status: newStatus, admin_comment: comment })
+  if (ok) {
+    s.status = newStatus
+    s.adminComment = comment
+    toast('success', '✅ Estatus actualizado: ' + sugStatus(newStatus).label)
+    modal.remove()
+    renderSugerencias()
+  } else {
+    btn.textContent = '💾 Guardar cambios'
+    btn.disabled = false
+  }
 }
 
 async function approveSug(id, level, btn) {
@@ -2430,6 +2509,20 @@ async function rejectSug(id, btn) {
   if (ok) {
     s.status = 'rechazada'; s.n1 = 'Rechazado'; s.n2 = 'Rechazado'
     toast('error', '❌ Sugerencia rechazada')
+    btn.closest('div[style*=fixed]').remove()
+    renderSugerencias()
+  }
+}
+
+async function markImplemented(id, btn) {
+  const s = SUGS.find(x => x.id === id)
+  if (!s) return
+  btn.textContent = '⏳'
+  btn.disabled = true
+  const ok = await sbUpdateSuggestion(id, { status: 'implementada' })
+  if (ok) {
+    s.status = 'implementada'
+    toast('success', '🚀 Sugerencia marcada como implementada')
     btn.closest('div[style*=fixed]').remove()
     renderSugerencias()
   }
@@ -2659,7 +2752,7 @@ function renderReportes(){
     +'<div><h2 style="font-family:\'Outfit\',sans-serif;font-size:19px;font-weight:800;color:var(--n)">Reportes 2025</h2>'
     +'<p style="font-size:12px;color:var(--gr);margin-top:2px">'+KAIZENS.length+' Kaizens · Querétaro, México</p></div>'
     +'<div style="display:flex;gap:8px;flex-wrap:wrap">'
-    +'<button class="btn btn-p" style="font-size:11px" onclick="toast(\'success\',\'📄 Generando PDF con logo + KPIs + gráficas...\')">📄 Exportar PDF</button>'
+    +'<button class="btn btn-p" style="font-size:11px" onclick="exportPDF()">📄 Exportar PDF</button>'
     +'<button class="btn btn-s" style="font-size:11px">🖨️ Imprimir</button>'
     +'</div></div>'
     +kpiRow+tabs+tabContent
@@ -3118,7 +3211,12 @@ async function loadData() {
       muda: k.muda || [],
       savings: Number(k.savings) || 0,
       status: k.status,
-      description: k.description || '',
+      description:  k.description   || '',
+      context:      k.context        || k.description || '',
+      procedure:    k.procedure_text || '',
+      results:      k.results_text   || '',
+      beforePhoto:  k.before_photo   || '',
+      afterPhoto:   k.after_photo    || '',
       participants: (k.kaizen_participants || []).map(p => p.name)
     }))
 
@@ -3138,8 +3236,7 @@ async function loadData() {
       employee: s.employee_name,
       status: s.status,
       savings: Number(s.savings) || 0,
-      n1: s.n1_status,
-      n2: s.n2_status,
+      adminComment: s.admin_comment || '',
       date: s.submission_date
     }))
 
@@ -3182,7 +3279,12 @@ async function sbSaveKaizen(kaizen, participants) {
         muda: kaizen.muda,
         savings: kaizen.savings,
         status: 'completado',
-        description: kaizen.description || '',
+        description:    kaizen.description  || '',
+        context:        kaizen.context      || '',
+        procedure_text: kaizen.procedure    || '',
+        results_text:   kaizen.results      || '',
+        before_photo:   kaizen.beforePhoto  || '',
+        after_photo:    kaizen.afterPhoto   || '',
         company_id: COMPANY_ID
       })
       .select()
@@ -3268,12 +3370,21 @@ async function sbUpdateSuggestion(id, fields) {
     if (b) b.textContent = '☀️'
   }
 
-  // Verificar si ya hay sesión activa
-  const { data: { session } } = await db.auth.getSession()
-  if (session) {
-    await loadData()
-    nav('dashboard')
-  } else {
+  try {
+    // Verificar si ya hay sesión activa
+    const { data, error } = await db.auth.getSession()
+    const session = data?.session
+    if (session) {
+      const name = session.user?.user_metadata?.name || session.user?.email?.split('@')[0] || 'Admin'
+      updateUserUI(name)
+      await loadData()
+      nav('dashboard')
+    } else {
+      nav('login')
+    }
+  } catch (err) {
+    console.error('Error en init:', err)
+    // Si falla la conexión, mostrar login de todas formas
     nav('login')
   }
 })()
@@ -3434,7 +3545,9 @@ async function doLogin() {
     return
   }
 
-  toast('success', '✅ Bienvenido — ' + (data.user?.user_metadata?.name || email.split('@')[0]))
+  const displayName = data.user?.user_metadata?.name || email.split('@')[0]
+  updateUserUI(displayName)
+  toast('success', '✅ ' + getGreeting() + ', ' + displayName)
   document.getElementById('content').style.padding = ''
   document.getElementById('content').style.minHeight = ''
   await loadData()
@@ -3483,17 +3596,17 @@ function renderKaizenDetail(id) {
     +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">'
     // Foto ANTES
     +'<div><p style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--gr);font-family:\'JetBrains Mono\',monospace;margin-bottom:7px">ANTES</p>'
-    +'<div style="aspect-ratio:16/9;border-radius:11px;overflow:hidden;background:linear-gradient(135deg,#1e3260,#1B2A4A);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px">'
-    +'<span style="font-size:32px">📸</span>'
-    +'<p style="font-size:11px;font-weight:600;color:rgba(255,255,255,.5)">Situación anterior</p>'
-    +'<div style="width:60%;height:3px;background:rgba(255,107,53,.3);border-radius:20px"></div>'
+    +'<div style="aspect-ratio:16/9;border-radius:11px;overflow:hidden;'+(k.beforePhoto?'background:#000':'background:linear-gradient(135deg,#1e3260,#1B2A4A);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px')+';">'
+    +(k.beforePhoto
+      ? '<img src="'+k.beforePhoto+'" style="width:100%;height:100%;object-fit:cover;display:block"/>'
+      : '<span style="font-size:32px">📸</span><p style="font-size:11px;font-weight:600;color:rgba(255,255,255,.5)">Sin foto</p>')
     +'</div></div>'
     // Foto DESPUÉS
     +'<div><p style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--gr);font-family:\'JetBrains Mono\',monospace;margin-bottom:7px">DESPUÉS</p>'
-    +'<div style="aspect-ratio:16/9;border-radius:11px;overflow:hidden;background:linear-gradient(135deg,#15803d,#166534);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px">'
-    +'<span style="font-size:32px">✨</span>'
-    +'<p style="font-size:11px;font-weight:600;color:rgba(255,255,255,.5)">Mejora implementada</p>'
-    +'<div style="width:60%;height:3px;background:rgba(82,183,136,.5);border-radius:20px"></div>'
+    +'<div style="aspect-ratio:16/9;border-radius:11px;overflow:hidden;'+(k.afterPhoto?'background:#000':'background:linear-gradient(135deg,#15803d,#166534);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px')+';">'
+    +(k.afterPhoto
+      ? '<img src="'+k.afterPhoto+'" style="width:100%;height:100%;object-fit:cover;display:block"/>'
+      : '<span style="font-size:32px">✨</span><p style="font-size:11px;font-weight:600;color:rgba(255,255,255,.5)">Sin foto</p>')
     +'</div></div>'
     +'</div></div></div>'
 
@@ -3501,9 +3614,9 @@ function renderKaizenDetail(id) {
     +'<div class="tc" style="margin-bottom:14px">'
     +'<div class="tc-head"><div class="tc-title"><div class="tc-bar"></div>📝 Descripción del Kaizen</div></div>'
     +'<div style="padding:16px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px" class="d-ex-grid">'
-    +[['🔍 Situación actual','Área de herramientas sin organización. El operador perdía entre 8-12 minutos por turno buscando herramientas. Riesgo de accidentes por herramientas mal ubicadas.'],
-      ['⚙️ Procedimiento','Se aplicó metodología 5S: Clasificación, Organización, Limpieza, Estandarización y Disciplina. Se instaló panel de sombras y se etiquetaron todas las herramientas.'],
-      ['✅ Resultados','Tiempo de búsqueda reducido de 10 min a 1 min. Cero accidentes relacionados. Mejora visible en el área. 95% de cumplimiento en auditorías 5S posteriores.']
+    +[['🔍 Situación actual', k.context   || k.description || '—'],
+      ['⚙️ Procedimiento',    k.procedure || '—'],
+      ['✅ Resultados',       k.results   || '—']
     ].map(function(s){
       return '<div style="background:var(--c);border:1px solid var(--cb);border-radius:11px;padding:13px">'
         +'<p style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--gr);font-family:\'JetBrains Mono\',monospace;margin-bottom:7px">'+s[0]+'</p>'
@@ -3558,6 +3671,9 @@ function generatePDFContent() {
     const doc = new jsPDF({ orientation:'p', unit:'mm', format:'a4' })
     const W = doc.internal.pageSize.getWidth()
     const totalSavings = KAIZENS.reduce((a,k)=>a+k.savings,0)
+    const now = new Date()
+    const fechaStr = now.toLocaleDateString('es-MX',{year:'numeric',month:'long',day:'numeric'})
+    const mesAnio = now.toLocaleDateString('es-MX',{month:'long',year:'numeric'}).replace(/^\w/,c=>c.toUpperCase())
 
     // Fondo header
     doc.setFillColor(27, 42, 74)
@@ -3584,7 +3700,7 @@ function generatePDFContent() {
     // Fecha y empresa
     doc.setFontSize(9)
     doc.setTextColor(255,255,255)
-    doc.text('Manufactura QRO · Abril 2025', W-14, 18, {align:'right'})
+    doc.text('Manufactura QRO · ' + mesAnio, W-14, 18, {align:'right'})
 
     // Línea dorada
     doc.setDrawColor(191, 149, 63)
@@ -3664,19 +3780,72 @@ function generatePDFContent() {
     doc.setTextColor(255,255,255)
     doc.text('Central Kaizen Digital · Fix-Ya Tech Services · Querétaro, México', 14, 284)
     doc.setTextColor(191,149,63)
-    doc.text('Confidencial · Abril 2025', W-14, 284, {align:'right'})
+    doc.text('Confidencial · ' + fechaStr, W-14, 284, {align:'right'})
 
-    doc.save('Reporte-Central-Kaizen-Digital-Abril-2025.pdf')
+    doc.save('Reporte-Central-Kaizen-Digital-' + mesAnio.replace(/ /g,'-') + '.pdf')
     toast('success','✅ PDF descargado correctamente')
   } catch(e) {
     toast('error','Error al generar PDF: ' + e.message)
   }
 }
 
-function exportKaizenPDF(id) {
+async function exportKaizenPDF(id) {
   const k = KAIZENS.find(x=>x.id===id)
   if (!k) return
-  toast('success','📄 PDF del Kaizen "' + k.title + '" generado')
+  try {
+    toast('info','📄 Generando PDF — un momento...')
+
+    // Asegurar que la vista de detalle esté renderizada
+    renderKaizenDetail(id)
+    await new Promise(r => setTimeout(r, 350))
+
+    // Cargar html2canvas si no está disponible
+    if (!window.html2canvas) {
+      await new Promise(function(resolve, reject) {
+        const s = document.createElement('script')
+        s.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js'
+        s.onload = resolve; s.onerror = reject
+        document.head.appendChild(s)
+      })
+    }
+
+    // Capturar el contenido como imagen
+    const el = document.getElementById('content')
+    const canvas = await html2canvas(el, {
+      scale: 2,
+      useCORS: true,
+      backgroundColor: '#FDFAF6',
+      logging: false,
+      windowWidth: 780
+    })
+
+    const { jsPDF } = window.jspdf || {}
+    if (!jsPDF) { toast('error','jsPDF no disponible'); return }
+
+    const doc  = new jsPDF({ orientation:'p', unit:'mm', format:'a4' })
+    const PW   = 210   // A4 width mm
+    const PH   = 297   // A4 height mm
+    const imgData  = canvas.toDataURL('image/jpeg', 0.88)
+    const imgW  = PW
+    const imgH  = (canvas.height * PW) / canvas.width
+
+    let remaining = imgH
+    let yOffset   = 0
+    let page      = 0
+    while (remaining > 0) {
+      if (page > 0) doc.addPage()
+      doc.addImage(imgData, 'JPEG', 0, -yOffset, imgW, imgH)
+      yOffset   += PH
+      remaining -= PH
+      page++
+    }
+
+    const filename = 'Kaizen-' + k.title.replace(/[^a-zA-Z0-9]/g,'-').substring(0,30) + '.pdf'
+    doc.save(filename)
+    toast('success','✅ PDF descargado')
+  } catch(e) {
+    toast('error','Error al generar PDF: ' + e.message)
+  }
 }
 
 
