@@ -1465,7 +1465,7 @@ tbody tr:hover{
       </div>
     </div>
   </div>
-  <div class="pg" id="content"></div>
+  <div class="pg" id="content"><div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:60vh;gap:16px"><div style="width:40px;height:40px;border:3px solid rgba(255,107,53,.2);border-top-color:#FF6B35;border-radius:50%;animation:spin 1s linear infinite"></div><p style="font-family:Outfit,sans-serif;font-size:14px;color:var(--gr)">Iniciando Central Kaizen...</p></div></div>
 </div>
 
 <div class="toast-w" id="tw"></div>
@@ -1516,13 +1516,18 @@ const IMPACTS = [
 const SUPABASE_URL  = 'https://usgqpaathldirdjcjuqx.supabase.co'
 const SUPABASE_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVzZ3FwYWF0aGxkaXJkamNqdXF4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc5MTQ4NjEsImV4cCI6MjA5MzQ5MDg2MX0.Q9zAr6e04IRFLLQYyw_hX41l37oOnlur2w4Hs4NLLZY'
 const COMPANY_ID    = '00000000-0000-0000-0000-000000000001'
-const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
-  auth: {
-    persistSession: true,
-    autoRefreshToken: true,
-    detectSessionInUrl: false
-  }
-})
+let db
+try {
+  db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+    auth: {
+      persistSession: true,
+      autoRefreshToken: true,
+      detectSessionInUrl: false
+    }
+  })
+} catch(e) {
+  console.error('Supabase CDN no cargó:', e)
+}
 
 // Arrays locales (cache en memoria — se cargan desde Supabase al inicio)
 let KAIZENS = []
@@ -3509,6 +3514,7 @@ async function sbUpdateSuggestion(id, fields) {
   }
 
   try {
+    if (!db) throw new Error('Supabase no disponible — revisa tu conexión a internet')
     // Verificar si ya hay sesión activa
     const { data, error } = await db.auth.getSession()
     const session = data?.session
@@ -3522,7 +3528,7 @@ async function sbUpdateSuggestion(id, fields) {
     }
   } catch (err) {
     console.error('Error en init:', err)
-    // Si falla la conexión, mostrar login de todas formas
+    // Aunque falle Supabase, mostrar pantalla de login
     nav('login')
   }
 })()
@@ -3681,6 +3687,12 @@ async function doLogin() {
 
   const btn = document.querySelector('[onclick="doLogin()"]')
   if (btn) { btn.textContent = '⏳ Verificando...'; btn.disabled = true }
+
+  if (!db) {
+    toast('error', '❌ Sin conexión. Recarga la página.')
+    if (btn) { btn.textContent = '⚡ Entrar'; btn.disabled = false }
+    return
+  }
 
   const { data, error } = await db.auth.signInWithPassword({ email, password: pass })
 
