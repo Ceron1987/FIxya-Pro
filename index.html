@@ -2897,7 +2897,7 @@ function renderUsuarios(){
         <td><span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;background:${u.active?'rgba(82,183,136,.12)':'rgba(239,68,68,.1)'};color:${u.active?'#15803d':'#dc2626'}">${u.active?'● Activo':'● Inactivo'}</span></td>
         <td><div style="display:flex;gap:4px">
           <button onclick="showQR('${u.emp}','${u.name}')" style="width:28px;height:28px;border-radius:7px;border:none;background:rgba(255,107,53,.1);color:var(--o);cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center" title="Ver QR">▣</button>
-          <button onclick="toggleUserActive(${u.id})" style="width:28px;height:28px;border-radius:7px;border:none;background:${u.active?'rgba(239,68,68,.1)':'rgba(82,183,136,.12)'};color:${u.active?'#dc2626':'#15803d'};cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center" title="${u.active?'Desactivar usuario':'Activar usuario'}">${u.active?'🔒':'✅'}</button>
+          <button onclick="toggleUserActive('${u.id}')" style="width:28px;height:28px;border-radius:7px;border:none;background:${u.active?'rgba(239,68,68,.1)':'rgba(82,183,136,.12)'};color:${u.active?'#dc2626':'#15803d'};cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center" title="${u.active?'Desactivar usuario':'Activar usuario'}">${u.active?'🔒':'✅'}</button>
           <button class="btn btn-s" style="height:28px;padding:0 8px;font-size:11px">✏️</button>
         </div></td>
       </tr>`).join('')}</tbody>
