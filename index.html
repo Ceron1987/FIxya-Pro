@@ -2511,22 +2511,22 @@ function openSug(id) {
   const currentSt = sugStatus(s.status)
 
   const modal = document.createElement('div')
-  modal.style.cssText='position:fixed;inset:0;z-index:500;display:flex;align-items:flex-start;justify-content:center;padding:20px 16px;background:rgba(27,42,74,.55);backdrop-filter:blur(5px);overflow-y:auto'
+  modal.style.cssText='position:fixed;inset:0;z-index:500;display:flex;align-items:flex-start;justify-content:center;padding:16px;background:rgba(27,42,74,.55);backdrop-filter:blur(5px);overflow-y:auto'
   modal.onclick=function(e){if(e.target===modal)modal.remove()}
 
   // Construir tarjetas de estatus
   const statusCards = SUG_STATUSES.map(function(st) {
     const isActive = s.status === st.id
-    return '<label style="display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:12px;border:2px solid '+(isActive?st.border:'var(--cb)')+';background:'+(isActive?st.bg:'white')+';cursor:pointer;transition:.15s;margin-bottom:6px" onclick="sugSelectStatus(this,\''+st.id+'\')">'
+    return '<label style="display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:12px;border:2px solid '+(isActive?st.border:'var(--cb)')+';background:'+(isActive?st.bg:'white')+';cursor:pointer;transition:.15s;margin-bottom:5px" onclick="sugSelectStatus(this,\''+st.id+'\')">'
       +'<input type="radio" name="sugStatus" value="'+st.id+'" '+(isActive?'checked':'')+' style="display:none">'
-      +'<div style="width:36px;height:36px;border-radius:10px;background:'+(isActive?st.bg:'rgba(156,163,175,.08)')+';border:1.5px solid '+(isActive?st.border:'rgba(156,163,175,.2)')+';display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;transition:.15s">'+st.ico+'</div>'
+      +'<div style="width:32px;height:32px;border-radius:9px;background:'+(isActive?st.bg:'rgba(156,163,175,.08)')+';border:1.5px solid '+(isActive?st.border:'rgba(156,163,175,.2)')+';display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;transition:.15s">'+st.ico+'</div>'
       +'<div style="flex:1"><p style="font-size:13px;font-weight:700;color:'+(isActive?st.color:'var(--n)')+'">'+st.label+'</p></div>'
       +(isActive?'<div style="width:20px;height:20px;border-radius:50%;background:'+st.color+';display:flex;align-items:center;justify-content:center"><svg width="11" height="11" viewBox="0 0 12 12"><path d="M2 6l3 3 5-5" stroke="white" stroke-width="2" fill="none" stroke-linecap="round"/></svg></div>':'<div style="width:20px;height:20px;border-radius:50%;border:2px solid var(--cb)"></div>')
       +'</label>'
   }).join('')
 
   modal.innerHTML =
-    '<div style="background:white;border-radius:18px;overflow:hidden;width:100%;max-width:620px;box-shadow:0 24px 80px rgba(27,42,74,.35);animation:pop .2s cubic-bezier(.16,1,.3,1);margin:auto">'
+    '<div style="background:white;border-radius:18px;overflow:hidden;width:100%;max-width:620px;box-shadow:0 24px 80px rgba(27,42,74,.35);animation:pop .2s cubic-bezier(.16,1,.3,1);margin:auto;display:flex;flex-direction:column">'
 
     // ── Header ──
     +'<div style="background:linear-gradient(135deg,#1B2A4A,#2E4070);padding:16px 20px;display:flex;align-items:flex-start;justify-content:space-between;gap:10px">'
@@ -2559,10 +2559,10 @@ function openSug(id) {
     +'<textarea id="sug-comment" placeholder="Escribe un comentario para el empleado (requerido si rechazas, opcional en otros casos)..." style="width:100%;min-height:80px;padding:10px 12px;border-radius:10px;border:1.5px solid var(--cb);font-size:13px;font-family:Plus Jakarta Sans,sans-serif;resize:vertical;outline:none;color:var(--n);box-sizing:border-box;transition:.2s" onfocus="this.style.borderColor=\'var(--o)\'" onblur="this.style.borderColor=\'var(--cb)\'">'+( s.adminComment||'')+'</textarea>'
     +'</div>'
 
-    // ── Botones ──
-    +'<div style="padding:14px 20px;display:flex;justify-content:flex-end;gap:10px;background:#fafaf9">'
-    +'<button class="btn btn-s" style="height:38px;font-size:13px" onclick="this.closest(\'div[style*=fixed]\').remove()">Cancelar</button>'
-    +'<button class="btn btn-p" style="height:38px;font-size:13px;min-width:140px" id="sug-save-btn" onclick="saveSugStatus('+s.id+',this)">💾 Guardar cambios</button>'
+    // ── Botones (sticky footer) ──
+    +'<div style="padding:12px 16px;display:flex;gap:8px;background:white;border-top:1.5px solid var(--cb);position:sticky;bottom:0;z-index:10">'
+    +'<button class="btn btn-s" style="height:42px;font-size:13px;flex:1" onclick="this.closest(\'div[style*=fixed]\').remove()">Cancelar</button>'
+    +'<button class="btn btn-p" style="height:42px;font-size:13px;flex:2;justify-content:center" id="sug-save-btn" onclick="saveSugStatus('+s.id+',this)">💾 Guardar cambios</button>'
     +'</div>'
 
     +'</div>'
