@@ -1443,6 +1443,7 @@ tbody tr:hover{
     <div class="usr-card">
       <div class="usr-av" id="sb-user-av">A</div>
       <div style="overflow:hidden;flex:1"><p id="sb-user-name" style="font-size:11px;font-weight:600;color:white;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Admin Sistema</p><span style="font-size:10px;color:rgba(255,255,255,.38)">Administrador</span></div>
+      <button onclick="doLogout()" title="Cerrar sesión" style="width:28px;height:28px;border-radius:7px;border:none;background:rgba(255,255,255,.08);color:rgba(255,255,255,.5);cursor:pointer;font-size:14px;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:.15s" onmouseover="this.style.background='rgba(220,38,38,.3)';this.style.color='white'" onmouseout="this.style.background='rgba(255,255,255,.08)';this.style.color='rgba(255,255,255,.5)'">⏏</button>
     </div>
   </div>
 </nav>
@@ -1515,7 +1516,13 @@ const IMPACTS = [
 const SUPABASE_URL  = 'https://usgqpaathldirdjcjuqx.supabase.co'
 const SUPABASE_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVzZ3FwYWF0aGxkaXJkamNqdXF4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzc5MTQ4NjEsImV4cCI6MjA5MzQ5MDg2MX0.Q9zAr6e04IRFLLQYyw_hX41l37oOnlur2w4Hs4NLLZY'
 const COMPANY_ID    = '00000000-0000-0000-0000-000000000001'
-const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY)
+const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: false
+  }
+})
 
 // Arrays locales (cache en memoria — se cargan desde Supabase al inicio)
 let KAIZENS = []
@@ -3657,6 +3664,13 @@ function renderLogin() {
   // Restaurar padding
   document.getElementById('content').style.padding = '0'
   document.getElementById('content').style.minHeight = '100vh'
+}
+
+async function doLogout() {
+  await db.auth.signOut()
+  KAIZENS = []; SUGS = []; USERS = []
+  toast('info', '👋 Sesión cerrada correctamente')
+  setTimeout(() => nav('login'), 800)
 }
 
 async function doLogin() {
