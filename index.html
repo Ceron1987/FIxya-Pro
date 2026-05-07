@@ -331,34 +331,39 @@ tbody tr:hover{background:linear-gradient(90deg,rgba(255,179,71,.04),rgba(255,10
   .sb.open{transform:translateX(0)}
   .sb-close{display:flex}
   .sb-overlay.open{display:block}
-  .mn{margin-left:0}
+  .mn{margin-left:0!important}
   .hd-menu{display:flex}
   .hd-user-info{display:none}
-  .pg{padding:14px}
+  .hd-notif{display:none}
+  .pg{padding:12px;padding-bottom:100px!important}
   .stats-grid{grid-template-columns:1fr 1fr;gap:8px}
   .sc{padding:12px}
-  .sc-n{font-size:22px}
-  .fgrid{grid-template-columns:1fr}
-  .charts-grid{grid-template-columns:1fr}
-  .muda-cards{grid-template-columns:1fr 1fr}
-  .muda-sel-grid{grid-template-columns:1fr 1fr}
-  .impact-grid{grid-template-columns:repeat(3,1fr)}
-  .type-opts{grid-template-columns:1fr 1fr}
-  .filters{gap:6px}
-  .filter-group{min-width:calc(50% - 4px)}
-  .hd-title{font-size:15px}
-  .pl-adm span.hd-role{display:none}
-  .podium{grid-template-columns:1fr 1fr 1fr}
-  .badge-grid{grid-template-columns:repeat(3,1fr)}
-  .flow-grid{grid-template-columns:1fr!important}
-  table{min-width:480px}
-  .toast-w{left:14px;right:14px}
-  .toast{min-width:unset}
-  .tbl-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
-  .hd-title{font-size:14px}
   .sc-n{font-size:20px}
   .sc-label{font-size:10px}
+  .fgrid{grid-template-columns:1fr!important}
+  .charts-grid{grid-template-columns:1fr!important}
+  .flow-grid{grid-template-columns:1fr!important}
+  .muda-cards{grid-template-columns:1fr 1fr}
+  .muda-sel-grid{grid-template-columns:1fr 1fr}
+  .impact-grid{grid-template-columns:repeat(2,1fr)}
+  .type-opts{grid-template-columns:1fr 1fr}
+  .filters{flex-direction:column;gap:6px}
+  .filter-group{min-width:100%}
+  .filter-search-wrap{min-width:100%}
+  .hd-title{font-size:14px}
+  .podium{grid-template-columns:1fr 1fr 1fr}
+  .badge-grid{grid-template-columns:repeat(3,1fr)}
+  table{min-width:460px;font-size:11px}
+  .tbl-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .toast-w{left:10px;right:10px;bottom:80px}
+  .toast{min-width:unset;font-size:12px}
   .modal{margin:12px;max-height:90vh;overflow-y:auto}
+  .tc-head{flex-wrap:wrap;gap:8px}
+  .form-section{border-radius:12px}
+  .fs-body{padding:12px}
+  .d-ex-grid{grid-template-columns:1fr!important}
+  .login-grid{grid-template-columns:1fr!important}
+  .login-branding{display:none!important}
 }
 
 /* ══ TICKER HORIZONTAL FLOTANTE ══ */
@@ -1916,9 +1921,29 @@ function renderKaizens() {
 
 /* ═══ NUEVO KAIZEN (cambios #1, #2, #3, #4, #6) ═══ */
 function renderNuevoKaizen() {
+  photoBeforeData = ''
+  photoAfterData  = ''
   document.getElementById('content').innerHTML = `
   <div style="max-width:680px">
     <button onclick="nav('kaizens')" style="display:flex;align-items:center;gap:5px;font-size:13px;color:var(--gr);border:none;background:none;cursor:pointer;margin-bottom:14px">← Volver</button>
+
+    <!-- DEFINICIONES -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px" class="fgrid">
+      <div style="background:linear-gradient(135deg,rgba(37,99,235,.06),rgba(37,99,235,.02));border:1.5px solid rgba(37,99,235,.18);border-radius:13px;padding:14px 16px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+          <div style="width:30px;height:30px;border-radius:9px;background:linear-gradient(135deg,#1B2A4A,#2563eb);display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0">⚡</div>
+          <p style="font-size:12px;font-weight:800;color:#1e3a8a;font-family:'Outfit',sans-serif">¿Qué es un Kaizen?</p>
+        </div>
+        <p style="font-size:12px;color:#1e40af;line-height:1.6">Es algo que la persona <strong>mejora en su área de trabajo por sí misma</strong>, eliminando algún desperdicio de proceso y aumentando el valor agregado.</p>
+      </div>
+      <div style="background:linear-gradient(135deg,rgba(217,119,6,.06),rgba(217,119,6,.02));border:1.5px solid rgba(217,119,6,.2);border-radius:13px;padding:14px 16px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+          <div style="width:30px;height:30px;border-radius:9px;background:linear-gradient(135deg,#92400e,#d97706);display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0">💡</div>
+          <p style="font-size:12px;font-weight:800;color:#92400e;font-family:'Outfit',sans-serif">¿Qué es una Sugerencia?</p>
+        </div>
+        <p style="font-size:12px;color:#b45309;line-height:1.6">Es algo que el colaborador <strong>identifica que se puede mejorar</strong>, pero necesita ser evaluado por otras personas para su aprobación e implementación.</p>
+      </div>
+    </div>
 
     <!-- 1. Info básica -->
     <div class="form-section">
@@ -3397,10 +3422,10 @@ function renderLogin() {
   document.getElementById('content').style.animation = 'none'
 
   document.getElementById('content').innerHTML = `
-  <div style="min-height:100vh;display:grid;grid-template-columns:1fr 1fr;background:var(--c)">
+  <div style="min-height:100vh;display:grid;grid-template-columns:1fr 1fr;background:var(--c)" class="login-grid">
 
     <!-- LADO IZQUIERDO — Branding -->
-    <div style="background:linear-gradient(135deg,#050f1e 0%,#1B2A4A 40%,#0f3460 100%);display:flex;flex-direction:column;justify-content:space-between;padding:40px;position:relative;overflow:hidden">
+    <div class="login-branding" style="background:linear-gradient(135deg,#050f1e 0%,#1B2A4A 40%,#0f3460 100%);display:flex;flex-direction:column;justify-content:space-between;padding:40px;position:relative;overflow:hidden">
       <!-- Figura decorativa -->
       <div style="position:absolute;right:-40px;top:-40px;width:300px;height:300px;border-radius:50%;background:rgba(255,107,53,.07);pointer-events:none"></div>
       <div style="position:absolute;left:-60px;bottom:-60px;width:280px;height:280px;border-radius:50%;background:rgba(82,183,136,.05);pointer-events:none"></div>
