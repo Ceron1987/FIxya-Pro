@@ -3128,9 +3128,10 @@ function openNewUserModal() {
     +'</div>'
     +'<div style="padding:20px;display:flex;flex-direction:column;gap:12px">'
     +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
-    +'<div><label style="font-size:11px;font-weight:700;color:#6B7280;display:block;margin-bottom:4px">Nombre completo <span style="color:#EF4444">*</span></label><input id="nu-name" class="inp" style="height:36px" placeholder="Ej: Luis Martínez"></div>'
-    +'<div><label style="font-size:11px;font-weight:700;color:#6B7280;display:block;margin-bottom:4px">Número de empleado <span style="color:#EF4444">*</span></label><input id="nu-emp" class="inp" style="height:36px" placeholder="Ej: EMP007"></div>'
+    +'<div><label style="font-size:11px;font-weight:700;color:#6B7280;display:block;margin-bottom:4px">Nombre <span style="color:#EF4444">*</span></label><input id="nu-nombre" class="inp" style="height:36px" placeholder="Ej: Luis"></div>'
+    +'<div><label style="font-size:11px;font-weight:700;color:#6B7280;display:block;margin-bottom:4px">Apellido <span style="color:#EF4444">*</span></label><input id="nu-apellido" class="inp" style="height:36px" placeholder="Ej: Martínez"></div>'
     +'</div>'
+    +'<div><label style="font-size:11px;font-weight:700;color:#6B7280;display:block;margin-bottom:4px">Número de empleado <span style="color:#EF4444">*</span></label><input id="nu-emp" class="inp" style="height:36px;font-family:JetBrains Mono,monospace;font-weight:700;letter-spacing:1px" placeholder="Ej: EMP-007"></div>'
     +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
     +'<div><label style="font-size:11px;font-weight:700;color:#6B7280;display:block;margin-bottom:4px">Área</label>'
     +'<select id="nu-area" class="inp" style="height:36px"><option>Producción</option><option>Calidad</option><option>Mantenimiento</option><option>Logística</option><option>Seguridad</option><option>Administración</option></select></div>'
@@ -3149,14 +3150,17 @@ function openNewUserModal() {
 }
 
 async function saveNewUser(btn) {
-  const modal = btn.closest('div[style*=fixed]')
-  const name  = document.getElementById('nu-name').value.trim()
-  const emp   = document.getElementById('nu-emp').value.trim()
-  const area  = document.getElementById('nu-area').value
-  const role  = document.getElementById('nu-role').value
-  const email = document.getElementById('nu-email') ? document.getElementById('nu-email').value.trim() : ''
-  if (!name) { toast('error','⚠️ El nombre es obligatorio'); return }
-  if (!emp)  { toast('error','⚠️ El número de empleado es obligatorio'); return }
+  const modal   = btn.closest('div[style*=fixed]')
+  const nombre  = (document.getElementById('nu-nombre')?.value||'').trim()
+  const apellido= (document.getElementById('nu-apellido')?.value||'').trim()
+  const name    = nombre && apellido ? nombre+' '+apellido : (nombre||apellido)
+  const emp     = document.getElementById('nu-emp').value.trim().toUpperCase()
+  const area    = document.getElementById('nu-area').value
+  const role    = document.getElementById('nu-role').value
+  const email   = document.getElementById('nu-email') ? document.getElementById('nu-email').value.trim() : ''
+  if (!nombre)  { toast('error','⚠️ El nombre es obligatorio'); return }
+  if (!apellido){ toast('error','⚠️ El apellido es obligatorio'); return }
+  if (!emp)     { toast('error','⚠️ El número de empleado es obligatorio'); return }
   if (USERS.find(function(u){return u.emp===emp})) { toast('error','⚠️ El número de empleado ya existe'); return }
   btn.textContent = '⏳ Guardando...'
   btn.disabled = true
@@ -4097,17 +4101,31 @@ async function doOperatorLogin() {
   if (btn) { btn.textContent='⏳ Verificando...'; btn.disabled=true }
   try {
     if (!db) throw new Error('Sin conexión')
-    const fullName = nombre + ' ' + apellido
+    // Buscar solo por número de empleado (único e inequívoco)
     const { data, error } = await db.from('users')
       .select('id,name,emp_number,area,role,active')
-      .ilike('name', fullName)
       .ilike('emp_number', emp)
       .eq('active', true)
       .eq('company_id', COMPANY_ID)
       .maybeSingle()
     if (error) throw error
     if (!data) {
-      toast('error','❌ Datos incorrectos o usuario no registrado')
+      toast('error','❌ Número de empleado no encontrado o usuario inactivo')
+      if (btn) { btn.textContent='Entrar →'; btn.disabled=false }
+      return
+    }
+    // Verificar que el nombre coincida (flexible: primer nombre, sin mayúsculas)
+    const storedFirst = (data.name||'').split(' ')[0].toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'')
+    const inputFirst  = nombre.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'')
+    const storedLast  = (data.name||'').split(' ').slice(1).join(' ').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'')
+    const inputLast   = apellido.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'')
+    if (!storedFirst.startsWith(inputFirst) && !storedFirst.includes(inputFirst)) {
+      toast('error','❌ El nombre no coincide con el empleado registrado')
+      if (btn) { btn.textContent='Entrar →'; btn.disabled=false }
+      return
+    }
+    if (inputLast && !storedLast.includes(inputLast) && !inputLast.includes(storedLast.split(' ')[0])) {
+      toast('error','❌ El apellido no coincide con el empleado registrado')
       if (btn) { btn.textContent='Entrar →'; btn.disabled=false }
       return
     }
@@ -4115,7 +4133,7 @@ async function doOperatorLogin() {
     currentUserRole = 'operador'
     currentOperator = data
     updateUserUI(data.name)
-    toast('success','✅ Bienvenido, '+nombre)
+    toast('success','✅ Bienvenido, '+data.name)
     nav('op_dashboard')
   } catch(e) {
     console.error(e)
