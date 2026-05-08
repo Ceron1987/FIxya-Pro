@@ -1978,6 +1978,10 @@ async function changeKaizenStatus(id, newStatus) {
 function renderNuevoKaizen() {
   photoBeforeData = ''
   photoAfterData  = ''
+  // Pre-fill operator name for individual kaizens
+  if (currentUserRole === 'operador' && currentOperator) {
+    individualName = currentOperator.name || ''
+  }
   document.getElementById('content').innerHTML = `
   <div style="max-width:680px">
     <button onclick="nav(currentUserRole==='operador'?'op_dashboard':'kaizens')" style="display:flex;align-items:center;gap:5px;font-size:13px;color:var(--gr);border:none;background:none;cursor:pointer;margin-bottom:14px">← Volver</button>
@@ -2013,7 +2017,7 @@ function renderNuevoKaizen() {
           </div>
           <div class="fi"><label>Área</label>
             <select class="inp" id="k-area">
-              ${['Producción','Calidad','Mantenimiento','Logística','Seguridad','Administración'].map(a=>`<option>${a}</option>`).join('')}
+              ${['Producción','Calidad','Mantenimiento','Logística','Seguridad','Administración'].map(a=>`<option${currentUserRole==='operador'&&currentOperator&&currentOperator.area===a?' selected':''}>${a}</option>`).join('')}
             </select>
           </div>
           <!-- CAMBIO #1: Solo Individual y Grupal -->
@@ -2462,12 +2466,12 @@ function renderNuevaSugerencia() {
         <div class="fgrid" style="grid-template-columns:1fr 1fr">
           <div class="fi">
             <label>Tu nombre <span class="rq">*</span></label>
-            <input class="inp" id="sg-name" placeholder="Ej: Juan Carlos Ramírez">
+            <input class="inp" id="sg-name" placeholder="Ej: Juan Carlos Ramírez" value="${currentUserRole==='operador'&&currentOperator?currentOperator.name:''}">
           </div>
           <div class="fi">
             <label>Área <span class="rq">*</span></label>
             <select class="inp" id="sg-area">
-              ${['Producción','Calidad','Mantenimiento','Logística','Seguridad','Administración'].map(a=>`<option>${a}</option>`).join('')}
+              ${['Producción','Calidad','Mantenimiento','Logística','Seguridad','Administración'].map(a=>`<option${currentUserRole==='operador'&&currentOperator&&currentOperator.area===a?' selected':''}>${a}</option>`).join('')}
             </select>
           </div>
         </div>
@@ -3730,8 +3734,8 @@ async function renderOperatorDashboard() {
   let opKaizens = [], opSugs = []
   try {
     if (db) {
-      const { data: kd } = await db.from('kaizens').select('id,title,status,created_at').eq('company_id', COMPANY_ID).order('created_at', {ascending:false})
-      const { data: sd } = await db.from('suggestions').select('id,folio,description,status,submission_date').eq('company_id', COMPANY_ID).order('submission_date', {ascending:false})
+      const { data: kd } = await db.from('kaizens').select('id,title,status,created_at,participants').eq('company_id', COMPANY_ID).order('created_at', {ascending:false})
+      const { data: sd } = await db.from('suggestions').select('id,folio,description,status,submission_date,employee_name').eq('company_id', COMPANY_ID).order('submission_date', {ascending:false})
       // Filtrar por empleado (por nombre del participante)
       opKaizens = (kd||[]).filter(function(k){ return (k.participants||[]).some && (k.participants||[]).some(function(p){ return p && op.name && p.toLowerCase().includes(op.name.split(' ')[0].toLowerCase()) }) })
       opSugs = (sd||[]).filter(function(s){ return s.employee_name && op.name && s.employee_name.toLowerCase().includes(op.name.split(' ')[0].toLowerCase()) })
