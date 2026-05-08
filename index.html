@@ -1583,7 +1583,13 @@ function nav(p) {
   const sb  = document.getElementById('sb')
   const mn  = document.querySelector('.mn')
   const tick = document.getElementById('mainTicker')
+  const isOp = currentUserRole === 'operador'
   if (p === 'login') {
+    if (sb)   { sb.style.display='none' }
+    if (mn)   { mn.style.marginLeft='0' }
+    if (tick) { tick.style.display='none' }
+  } else if (isOp) {
+    // Operador: sin sidebar, sin ticker
     if (sb)   { sb.style.display='none' }
     if (mn)   { mn.style.marginLeft='0' }
     if (tick) { tick.style.display='none' }
@@ -1974,7 +1980,7 @@ function renderNuevoKaizen() {
   photoAfterData  = ''
   document.getElementById('content').innerHTML = `
   <div style="max-width:680px">
-    <button onclick="nav('kaizens')" style="display:flex;align-items:center;gap:5px;font-size:13px;color:var(--gr);border:none;background:none;cursor:pointer;margin-bottom:14px">← Volver</button>
+    <button onclick="nav(currentUserRole==='operador'?'op_dashboard':'kaizens')" style="display:flex;align-items:center;gap:5px;font-size:13px;color:var(--gr);border:none;background:none;cursor:pointer;margin-bottom:14px">← Volver</button>
 
     <!-- DEFINICIONES -->
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px" class="fgrid">
@@ -2119,7 +2125,7 @@ function renderNuevoKaizen() {
 
     <div style="display:flex;gap:10px;padding-bottom:24px;flex-wrap:wrap">
       <button class="btn btn-p" style="height:42px;font-size:13px;flex:1;justify-content:center" onclick="saveKaizen()">⚡ Registrar Kaizen</button>
-      <button class="btn btn-s" style="height:42px" onclick="nav('kaizens')">Cancelar</button>
+      <button class="btn btn-s" style="height:42px" onclick="nav(currentUserRole==='operador'?'op_dashboard':'kaizens')">Cancelar</button>
     </div>
   </div>`
   renderPBody()
@@ -2378,7 +2384,7 @@ async function saveKaizen() {
   photoAfterData=''
 
   toast('success',`⚡ Kaizen "${title}" guardado correctamente`)
-  setTimeout(()=>nav('kaizens'),1000)
+  setTimeout(()=>nav(currentUserRole==='operador'?'op_dashboard':'kaizens'),1000)
 }
 
 /* ═══ SUGERENCIAS ═══ */
@@ -2438,7 +2444,7 @@ function renderSugerencias() {
 function renderNuevaSugerencia() {
   document.getElementById('content').innerHTML = `
   <div style="max-width:620px">
-    <button onclick="nav('sugerencias')" style="display:flex;align-items:center;gap:5px;font-size:13px;color:var(--gr);border:none;background:none;cursor:pointer;margin-bottom:14px">← Volver a Sugerencias</button>
+    <button onclick="nav(currentUserRole==='operador'?'op_dashboard':'sugerencias')" style="display:flex;align-items:center;gap:5px;font-size:13px;color:var(--gr);border:none;background:none;cursor:pointer;margin-bottom:14px">← Volver</button>
 
     <!-- Definición -->
     <div style="background:linear-gradient(135deg,rgba(217,119,6,.07),rgba(217,119,6,.02));border:1.5px solid rgba(217,119,6,.2);border-radius:13px;padding:14px 16px;margin-bottom:16px">
@@ -2488,7 +2494,7 @@ function renderNuevaSugerencia() {
     </div>
 
     <div style="display:flex;gap:10px;padding-bottom:24px;margin-top:4px">
-      <button class="btn btn-s" onclick="nav('sugerencias')" style="height:42px">Cancelar</button>
+      <button class="btn btn-s" onclick="nav(currentUserRole==='operador'?'op_dashboard':'sugerencias')" style="height:42px">Cancelar</button>
       <button class="btn btn-p" style="height:42px;flex:1;justify-content:center;font-size:14px" onclick="saveSugerencia(this)">💡 Enviar sugerencia</button>
     </div>
   </div>`
@@ -2530,7 +2536,7 @@ async function saveSugerencia(btn) {
     })
 
     toast('success', '✅ Sugerencia enviada correctamente — Folio: ' + folio)
-    setTimeout(() => nav('sugerencias'), 1200)
+    setTimeout(() => nav(currentUserRole==='operador'?'op_dashboard':'sugerencias'), 1200)
   } catch(err) {
     console.error(err)
     toast('error', '⚠️ Error al guardar la sugerencia')
