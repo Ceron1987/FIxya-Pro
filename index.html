@@ -3150,6 +3150,13 @@ function openNewUserModal() {
     +'</div>'
     +'<div><label style="font-size:11px;font-weight:700;color:#6B7280;display:block;margin-bottom:4px">Correo electrónico</label>'
     +'<input id="nu-email" class="inp" style="height:36px" type="email" placeholder="empleado@empresa.com"></div>'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'
+    +'<div><label style="font-size:11px;font-weight:700;color:#6B7280;display:block;margin-bottom:4px">PIN de acceso (4 dígitos) <span style="color:#EF4444">*</span></label>'
+    +'<input id="nu-pin" class="inp" style="height:36px;font-family:JetBrains Mono,monospace;font-weight:700;letter-spacing:4px;font-size:18px" type="password" inputmode="numeric" maxlength="4" pattern="[0-9]{4}" placeholder="••••"></div>'
+    +'<div><label style="font-size:11px;font-weight:700;color:#6B7280;display:block;margin-bottom:4px">Confirmar PIN</label>'
+    +'<input id="nu-pin2" class="inp" style="height:36px;font-family:JetBrains Mono,monospace;font-weight:700;letter-spacing:4px;font-size:18px" type="password" inputmode="numeric" maxlength="4" placeholder="••••"></div>'
+    +'</div>'
+    +'<div style="background:#EFF6FF;border:1px solid #BFDBFE;border-radius:9px;padding:8px 12px;font-size:11px;color:#1d4ed8">🔐 El operador usará este PIN para iniciar sesión junto con su nombre y # empleado.</div>'
     +'</div>'
     +'<div style="padding:14px 20px;background:#f8fafc;border-top:1px solid #E8DDD0;display:flex;justify-content:flex-end;gap:8px">'
     +'<button onclick="this.closest(\'div[style*=fixed]\').remove()" class="btn btn-s" style="height:36px">Cancelar</button>'
@@ -3168,16 +3175,22 @@ async function saveNewUser(btn) {
   const area    = document.getElementById('nu-area').value
   const role    = document.getElementById('nu-role').value
   const email   = document.getElementById('nu-email') ? document.getElementById('nu-email').value.trim() : ''
+  const pin     = (document.getElementById('nu-pin')?.value||'').trim()
+  const pin2    = (document.getElementById('nu-pin2')?.value||'').trim()
   if (!nombre)  { toast('error','⚠️ El nombre es obligatorio'); return }
   if (!apellido){ toast('error','⚠️ El apellido es obligatorio'); return }
   if (!emp)     { toast('error','⚠️ El número de empleado es obligatorio'); return }
+  if (!pin || pin.length < 4) { toast('error','⚠️ El PIN debe tener 4 dígitos'); return }
+  if (!/^\d{4}$/.test(pin))   { toast('error','⚠️ El PIN solo puede contener números'); return }
+  if (pin !== pin2)            { toast('error','⚠️ Los PINs no coinciden'); return }
   if (USERS.find(function(u){return u.emp===emp})) { toast('error','⚠️ El número de empleado ya existe'); return }
   btn.textContent = '⏳ Guardando...'
   btn.disabled = true
-  const newDbUser = await sbAddUser({ name, emp, area, role, email })
+  const pinHash = await hashPin(pin)
+  const newDbUser = await sbAddUser({ name, emp, area, role, email, pinHash })
   if (newDbUser) {
     USERS.push({ id: newDbUser.id, name, emp, area, role, kaizens: 0, active: true })
-    toast('success','✅ Empleado "'+name+'" guardado en base de datos')
+    toast('success','✅ Empleado "'+name+'" guardado — PIN configurado 🔐')
     modal.remove()
     renderUsuarios()
   } else {
@@ -3662,6 +3675,11 @@ async function sbToggleUser(userId, active) {
   return true
 }
 
+async function hashPin(pin) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(pin))
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('')
+}
+
 async function sbAddUser(userData) {
   const roleMapInv = { 'Operador':'operador', 'Jefe Directo':'jefe_directo', 'Gerente N2':'n2', 'Administrador':'administrador' }
   const { data, error } = await db
@@ -3674,7 +3692,8 @@ async function sbAddUser(userData) {
       role: roleMapInv[userData.role] || 'operador',
       active: true,
       kaizens_count: 0,
-      company_id: COMPANY_ID
+      company_id: COMPANY_ID,
+      pin_hash: userData.pinHash || null
     })
     .select()
     .single()
@@ -4087,8 +4106,12 @@ function openOperadorLogin() {
           <label style="font-size:11px;font-weight:700;color:#6B7280;display:block;margin-bottom:4px">Número de empleado <span style="color:#EF4444">*</span></label>
           <input id="op-emp" class="inp" style="height:40px;font-family:JetBrains Mono,monospace;font-size:14px;font-weight:700;letter-spacing:1px" placeholder="Ej: EMP-001">
         </div>
+        <div>
+          <label style="font-size:11px;font-weight:700;color:#6B7280;display:block;margin-bottom:4px">PIN (4 dígitos) <span style="color:#EF4444">*</span></label>
+          <input id="op-pin" class="inp" style="height:40px;font-family:JetBrains Mono,monospace;font-size:22px;font-weight:700;letter-spacing:8px;text-align:center" type="password" inputmode="numeric" maxlength="4" placeholder="••••" onkeydown="if(event.key==='Enter')doOperatorLogin()">
+        </div>
         <div style="background:#F0FDF4;border:1px solid #BBF7D0;border-radius:10px;padding:9px 12px;font-size:11px;color:#15803d">
-          🔒 Tus credenciales son: Nombre + Apellido + # Empleado
+          🔐 Credenciales: Nombre + Apellido + # Empleado + PIN
         </div>
         <div style="display:flex;gap:8px">
           <button onclick="this.closest('div[style*=fixed]').remove()" style="flex:1;height:40px;border-radius:10px;border:1.5px solid #E5E7EB;background:white;cursor:pointer;font-size:13px;font-weight:600;color:#6B7280">Cancelar</button>
@@ -4104,16 +4127,17 @@ async function doOperatorLogin() {
   const nombre   = (document.getElementById('op-nombre')?.value||'').trim()
   const apellido = (document.getElementById('op-apellido')?.value||'').trim()
   const emp      = (document.getElementById('op-emp')?.value||'').trim().toUpperCase()
+  const pin      = (document.getElementById('op-pin')?.value||'').trim()
   if (!nombre)   { toast('error','⚠️ Ingresa tu nombre'); return }
   if (!apellido) { toast('error','⚠️ Ingresa tu apellido'); return }
   if (!emp)      { toast('error','⚠️ Ingresa tu número de empleado'); return }
+  if (!pin)      { toast('error','⚠️ Ingresa tu PIN de 4 dígitos'); return }
   const btn = document.getElementById('op-login-btn')
   if (btn) { btn.textContent='⏳ Verificando...'; btn.disabled=true }
   try {
     if (!db) throw new Error('Sin conexión')
-    // Buscar solo por número de empleado (único e inequívoco)
     const { data, error } = await db.from('users')
-      .select('id,name,emp_number,area,role,active')
+      .select('id,name,emp_number,area,role,active,pin_hash')
       .ilike('emp_number', emp)
       .eq('active', true)
       .eq('company_id', COMPANY_ID)
@@ -4124,7 +4148,7 @@ async function doOperatorLogin() {
       if (btn) { btn.textContent='Entrar →'; btn.disabled=false }
       return
     }
-    // Verificar que el nombre coincida (flexible: primer nombre, sin mayúsculas)
+    // Verificar nombre (flexible)
     const storedFirst = (data.name||'').split(' ')[0].toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'')
     const inputFirst  = nombre.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'')
     const storedLast  = (data.name||'').split(' ').slice(1).join(' ').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'')
@@ -4139,11 +4163,21 @@ async function doOperatorLogin() {
       if (btn) { btn.textContent='Entrar →'; btn.disabled=false }
       return
     }
+    // Verificar PIN
+    if (data.pin_hash) {
+      const inputHash = await hashPin(pin)
+      if (inputHash !== data.pin_hash) {
+        toast('error','❌ PIN incorrecto')
+        if (btn) { btn.textContent='Entrar →'; btn.disabled=false }
+        return
+      }
+    }
+    // pin_hash null = usuario antiguo sin PIN, permitir acceso (retrocompatibilidad)
     document.querySelector('div[style*="z-index:600"]')?.remove()
     currentUserRole = 'operador'
     currentOperator = data
     updateUserUI(data.name)
-    toast('success','✅ Bienvenido, '+data.name)
+    toast('success','✅ Bienvenido, '+data.name.split(' ')[0]+'!')
     nav('op_dashboard')
   } catch(e) {
     console.error(e)
